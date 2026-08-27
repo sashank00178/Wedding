@@ -1,0 +1,339 @@
+// Prisma schema — E-Commerce Store
+//
+// To migrate to PostgreSQL later, change the datasource provider
+// from "sqlite" to "postgresql" and update DATABASE_URL. All models,
+// relations, and indexes remain identical.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+//  USERS & AUTH
+// ============================================================
+
+/// Registered users (customers + admins).
+/// Role field gates admin-only routes (STEP 7).
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique                    // used for NextAuth login
+  emailVerified DateTime? @map("email_verified")     // set after email confirmation
+  passwordHash  String    @map("password_hash")       // bcrypt hash, never store plaintext
+  image         String?                              // avatar URL
+  role          String    @default("customer")       // "customer" | "admin"
+  resetToken    String?   @unique @map("reset_token") // password-reset token (STEP 9)
+  resetExpiry   DateTime? @map("reset_expiry")       // when the reset token expires
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations — a user can have many carts (one active), reviews, orders
+  carts    Cart[]
+  reviews  Review[]
+  orders   Order[]
+
+  @@index([email])          // fast login lookups
+  @@index([role])           // admin queries
+  @@map("users")            // table name in DB
+}
+
+// ============================================================
+//  SECURITY — Failed Login Tracking (STEP 8)
+// ============================================================
+
+/// Tracks failed login attempts per email/IP.
+/// Used to lock out accounts after too many failures.
+model FailedLogin {
+  id        String   @id @default(cuid())
+  email     String                              // the email that was attempted (may not exist)
+  ip        String                              // client IP address
+  attempts  Int      @default(1)               // consecutive failure count
+  lastFailAt DateTime @default(now()) @map("last_fail_at")
+  lockedUntil DateTime? @map("locked_until")   // if set, account is locked until this time
+  createdAt DateTime @default(now())
+
+  @@unique([email, ip])  // one record per email+IP combo
+  @@index([email])
+  @@index([ip])
+  @@index([lockedUntil])
+  @@map("failed_logins")
+}
+
+// ============================================================
+//  PRODUCT CATALOG
+// ============================================================
+
+/// Top-level categories (e.g. "Electronics", "Clothing").
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique                   // URL-safe identifier e.g. "electronics"
+  description String?
+  image       String?                             // category banner/thumbnail
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@index([slug])
+  @@map("categories")
+}
+
+/// A product belongs to one category and can have multiple variants (size, color, etc.)
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique                   // URL-safe e.g. "wireless-headphones"
+  description String                            // full rich-text description
+  basePrice   Float    @map("base_price")        // price of the cheapest variant (display price)
+  categoryId  String   @map("category_id")
+  images      String   @default("[]")            // JSON array of image URLs
+  isFeatured  Boolean  @default(false) @map("is_featured")
+  isActive    Boolean  @default(true) @map("is_active")
+  stockCount  Int      @default(0) @map("stock_count") // aggregated from variants
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category  Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  variants  ProductVariant[]
+  reviews   Review[]
+
+  @@index([categoryId])     // filter by category
+  @@index([slug])
+  @@index([basePrice])      // sort by price
+  @@index([isActive])
+  @@map("products")
+}
+
+/// Variant of a product (e.g. size M, color Red).
+/// Each variant has its own price and stock level.
+model ProductVariant {
+  id         String  @id @default(cuid())
+  productId  String  @map("product_id")
+  sku        String  @unique                    // unique stock-keeping unit code
+  name       String                             // human-readable label e.g. "Small / Blue"
+  price      Float                              // may differ from base price
+  stockCount Int     @default(0) @map("stock_count")
+  attributes String @default("{}")              // JSON object { size: "M", color: "Blue" }
+
+  product     Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+
+  @@index([productId])
+  @@index([sku])
+  @@map("product_variants")
+}
+
+// ============================================================
+//  SHOPPING CART
+// ============================================================
+
+/// One cart per session. Logged-in users own their cart via userId.
+/// Guest users get a cart tied to a random guestSessionId stored in a cookie.
+model Cart {
+  id             String   @id @default(cuid())
+  userId         String?  @unique @map("user_id")          // null for guest carts
+  guestSessionId String?  @unique @map("guest_session_id") // random UUID in cookie for guests
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user   User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items  CartItem[]
+
+  @@index([guestSessionId])
+  @@map("carts")
+}
+
+/// Individual line item inside a cart.
+model CartItem {
+  id               String   @id @default(cuid())
+  cartId           String   @map("cart_id")
+  productVariantId String   @map("product_variant_id")
+  quantity         Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  cart          Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  @@unique([cartId, productVariantId]) // prevent duplicate variant in same cart
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+// ============================================================
+//  ORDERS
+// ============================================================
+
+/// An order is created when checkout completes (STEP 5).
+/// Status lifecycle: pending → processing → shipped → delivered / cancelled
+model Order {
+  id            String   @id @default(cuid())
+  userId        String?  @map("user_id")                     // null for guest orders
+  orderNumber   String   @unique @map("order_number")    // human-readable e.g. "ORD-20260727-AB3F"
+  status        String   @default("pending")               // pending | processing | shipped | delivered | cancelled
+  subtotal      Float                               // sum of item prices × qty
+  tax           Float    @default(0)
+  shippingCost  Float    @default(0) @map("shipping_cost")
+  discount      Float    @default(0)                   // coupon discount amount
+  total         Float                               // subtotal + tax + shipping - discount
+  shippingAddr  String   @map("shipping_addr")         // JSON string { name, line1, line2, city, zip, country, phone }
+  notes         String?                              // optional customer notes
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user       User?       @relation(fields: [userId], references: [id])
+  items      OrderItem[]
+  payment    Payment?
+  coupon     Coupon?     @relation(fields: [couponId], references: [id])
+  couponId   String?     @map("coupon_id")
+
+  @@index([userId])         // user's order history
+  @@index([status])         // admin filters
+  @@index([orderNumber])
+  @@index([createdAt])      // sort by newest
+  @@map("orders")
+}
+
+/// Line item inside an order — snapshot of the product at purchase time.
+model OrderItem {
+  id               String   @id @default(cuid())
+  orderId          String   @map("order_id")
+  productVariantId String   @map("product_variant_id")
+  productName      String   @map("product_name")       // denormalized for historical accuracy
+  variantName      String   @map("variant_name")        // e.g. "Small / Blue"
+  priceAtPurchase  Float    @map("price_at_purchase")   // snapshot — price might change later
+  quantity         Int
+  createdAt        DateTime @default(now())
+
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  @@index([orderId])
+  @@index([productVariantId])
+  @@map("order_items")
+}
+
+// ============================================================
+//  PAYMENTS
+// ============================================================
+
+/// One payment record per order. Created by Stripe webhook (STEP 5).
+model Payment {
+  id               String   @id @default(cuid())
+  orderId          String   @unique @map("order_id")
+  stripeSessionId  String   @unique @map("stripe_session_id")
+  amount           Float
+  currency         String   @default("usd")
+  status           String   @default("pending")  // pending | succeeded | failed | refunded
+  method           String   @default("stripe")
+  metadata         String   @default("{}")       // JSON — any extra Stripe metadata
+  paidAt           DateTime? @map("paid_at")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([stripeSessionId])
+  @@index([status])
+  @@map("payments")
+}
+
+// ============================================================
+//  REVIEWS
+// ============================================================
+
+/// Customers can leave a review on a product (1-5 stars + optional text).
+model Review {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  rating    Int                                  // 1-5
+  title     String?
+  comment   String?
+  isApproved Boolean  @default(false) @map("is_approved") // admin must approve before showing
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])  // one review per user per product
+  @@index([productId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+// ============================================================
+//  COUPONS / DISCOUNT CODES
+// ============================================================
+
+/// Discount codes that can be applied at checkout.
+model Coupon {
+  id          String    @id @default(cuid())
+  code        String    @unique                    // e.g. "SUMMER20"
+  type        String    @default("percentage")     // "percentage" | "fixed"
+  value       Float                               // 20 means 20% or $20
+  minOrder    Float?    @map("min_order")          // minimum order amount to use coupon
+  maxUses     Int?      @map("max_uses")           // null = unlimited
+  usedCount   Int       @default(0) @map("used_count")
+  isActive    Boolean   @default(true) @map("is_active")
+  validFrom   DateTime? @map("valid_from")
+  validUntil  DateTime? @map("valid_until")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  orders Order[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("coupons")
+}
+
+// ============================================================
+//  LEGACY — Wedding Moment Nepal models (kept for backward compat)
+// ============================================================
+
+model Booking {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  service   String
+  date      String
+  message   String?
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentOrder {
+  id              String   @id @default(cuid())
+  gateway         String
+  customerName    String
+  customerPhone   String
+  packageName     String
+  amount          Float
+  transactionUuid String   @unique
+  pidx            String?
+  status          String   @default("initiated")
+  rawResponse     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}
