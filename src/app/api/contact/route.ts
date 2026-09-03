@@ -21,28 +21,31 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, email, subject, message } = body ?? {};
 
-    if (!name || !email || !subject || !message) {
+    if (!email || !message) {
       return NextResponse.json(
-        { success: false, message: "All fields are required" },
+        { success: false, message: "Email and message are required" },
         { status: 400 }
       );
     }
 
+    const senderName = name ? String(name).trim() : String(email).split('@')[0] || "Website Visitor";
+    const msgSubject = subject ? String(subject).trim() : "Direct Website Inquiry";
+
     await db.contactMessage.create({
       data: {
-        name: String(name),
-        email: String(email),
-        subject: String(subject),
-        message: String(message),
+        name: senderName,
+        email: String(email).trim().toLowerCase(),
+        subject: msgSubject,
+        message: String(message).trim(),
       },
     });
 
     // Notify admin via email (fire-and-forget)
     sendContactNotification({
-      name: String(name),
-      email: String(email),
-      subject: String(subject),
-      message: String(message),
+      name: senderName,
+      email: String(email).trim().toLowerCase(),
+      subject: msgSubject,
+      message: String(message).trim(),
     }).catch((err) => {
       console.error("[CONTACT] Failed to send admin notification:", err);
     });
