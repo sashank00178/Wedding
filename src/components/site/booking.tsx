@@ -245,79 +245,87 @@ export function Booking() {
 
   return (
     <Section id="booking" className="py-20 sm:py-28 bg-background">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <SectionTitle
           eyebrow="Reserve your date"
           title="Book a Session"
           subtitle="Schedule your photography session with us. We will get back to you within 24 hours."
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 items-stretch">
-          {/* Left: Info details */}
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch max-w-5xl mx-auto">
+          {/* Left: Info Card (Matching right card in structure & padding) */}
+          <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
             <div>
-              <h3 className="font-serif text-2xl font-bold mb-3">
+              <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground mb-3">
                 Ready to Capture Your Moments?
               </h3>
-              <p className="text-muted-foreground leading-relaxed mb-4">
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mb-3.5">
                 Fill out the booking form or secure your date immediately with
                 an advance payment. Our professional photography team will
                 finalize every detail with you.
               </p>
-              <p className="text-muted-foreground leading-relaxed mb-4">
-                Our studio is equipped with state-of-the-art equipment and
-                professional lighting to ensure the best results for your
-                photoshoot.
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mb-4">
+                Our studio is equipped with state-of-the-art equipment, professional
+                lighting setups, and artistic direction to ensure timeless results for your photoshoot.
               </p>
-              <p className="text-muted-foreground leading-relaxed">
-                For urgent bookings, you can also call us directly at{' '}
-                <a
-                  href={`tel:${SITE.phone.replace(/\s/g, '')}`}
-                  className="font-semibold text-gold hover:underline"
-                >
-                  {SITE.phone}
-                </a>
-                .
-              </p>
+
+              {/* Service Highlights */}
+              <div className="space-y-2.5 pt-4 border-t border-border/60 text-xs">
+                <div className="flex items-center gap-2.5 text-foreground/90">
+                  <span className="h-1.5 w-1.5 rounded-full bg-gold shrink-0" />
+                  <span>Studio and outdoor location coverage across Nepal</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-foreground/90">
+                  <span className="h-1.5 w-1.5 rounded-full bg-gold shrink-0" />
+                  <span>Color-graded high-resolution digital deliverables</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-foreground/90">
+                  <span className="h-1.5 w-1.5 rounded-full bg-gold shrink-0" />
+                  <span>Flexible rescheduling in case of weather changes</span>
+                </div>
+              </div>
             </div>
 
-            <div className="bg-secondary/60 border border-border rounded-xl p-5 space-y-4">
-              <div>
-                <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
-                  Response time
-                </p>
-                <p className="text-sm font-semibold text-foreground">Within 24 hours</p>
+            {/* Connected Footer Info Block (Matching right card's footer) */}
+            <div className="pt-4 mt-5 border-t border-border/70 space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold block">
+                    Response Time
+                  </span>
+                  <span className="text-xs font-semibold text-foreground mt-0.5 block">
+                    Within 24 Hours
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold block">
+                    Direct Studio Line
+                  </span>
+                  <a
+                    href={`tel:${SITE.phone.replace(/\s/g, '')}`}
+                    className="text-xs font-semibold text-gold hover:underline mt-0.5 block"
+                  >
+                    {SITE.phone}
+                  </a>
+                </div>
               </div>
-              <div className="pt-3 border-t border-border/60">
-                <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
-                  Direct phone line
-                </p>
-                <a
-                  href={`tel:${SITE.phone.replace(/\s/g, '')}`}
-                  className="text-sm font-semibold text-gold hover:underline"
-                >
-                  {SITE.phone}
-                </a>
-              </div>
-              <div className="pt-3 border-t border-border/60">
-                <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
-                  Payment Security
-                </p>
-                <p className="text-sm font-semibold text-foreground">eSewa &bull; Khalti &bull; Bank</p>
+
+              <div className="pt-2.5 border-t border-border/50 text-[11px] text-muted-foreground">
+                Advance payments secured via <span className="font-semibold text-foreground">eSewa</span> &amp; <span className="font-semibold text-foreground">Khalti</span>
               </div>
             </div>
           </div>
 
           {/* Right: Unified Tabbed Card */}
-          <div className="lg:col-span-3 bg-card border border-border rounded-xl p-6 sm:p-8 shadow-sm flex flex-col justify-between">
+          <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
             {/* Top Tab Navigation */}
             <div>
-              <div className="flex border-b border-border mb-6">
+              <div className="flex border-b border-border mb-5">
                 <button
                   type="button"
                   onClick={() => handleTabChange('booking')}
                   className={cn(
-                    'relative pb-3 px-3 sm:px-5 text-sm sm:text-base font-semibold transition-all whitespace-nowrap flex items-center gap-2',
+                    'relative pb-2.5 px-3 sm:px-4 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-2',
                     activeTab === 'booking'
                       ? 'text-gold'
                       : 'text-muted-foreground hover:text-foreground'
@@ -326,13 +334,13 @@ export function Booking() {
                   <CalendarCheck className="h-4 w-4" />
                   <span>Booking</span>
                   {activeTab === 'booking' && (
-                    <span className="absolute -bottom-px left-0 right-0 h-[2.5px] bg-gold rounded-full transition-all" />
+                    <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-gold rounded-full transition-all" />
                   )}
                 </button>
 
                 <div
                   className={cn(
-                    'relative pb-3 px-3 sm:px-5 text-sm sm:text-base font-semibold transition-all whitespace-nowrap flex items-center gap-2',
+                    'relative pb-2.5 px-3 sm:px-4 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-2',
                     activeTab === 'advance'
                       ? 'text-gold'
                       : 'text-muted-foreground hover:text-foreground'
@@ -351,7 +359,7 @@ export function Booking() {
                   <AdvanceBookingTooltip />
 
                   {activeTab === 'advance' && (
-                    <span className="absolute -bottom-px left-0 right-0 h-[2.5px] bg-gold rounded-full transition-all" />
+                    <span className="absolute -bottom-px left-0 right-0 h-[2px] bg-gold rounded-full transition-all" />
                   )}
                 </div>
               </div>
@@ -360,11 +368,11 @@ export function Booking() {
               {activeTab === 'booking' && (
                 <form
                   onSubmit={onBookingSubmit}
-                  className="space-y-5 animate-in fade-in-50 duration-200"
+                  className="space-y-3.5 animate-in fade-in-50 duration-200"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="space-y-2">
-                      <Label htmlFor="booking-name">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="space-y-1">
+                      <Label htmlFor="booking-name" className="text-xs font-medium text-foreground/80">
                         Full Name <span className="text-destructive">*</span>
                       </Label>
                       <Input
@@ -373,10 +381,11 @@ export function Booking() {
                         onChange={(e) => updateBooking('name', e.target.value)}
                         required
                         placeholder="Your full name"
+                        className="h-9 text-xs"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="booking-email">
+                    <div className="space-y-1">
+                      <Label htmlFor="booking-email" className="text-xs font-medium text-foreground/80">
                         Email Address <span className="text-destructive">*</span>
                       </Label>
                       <Input
@@ -386,10 +395,11 @@ export function Booking() {
                         onChange={(e) => updateBooking('email', e.target.value)}
                         required
                         placeholder="you@example.com"
+                        className="h-9 text-xs"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="booking-phone">
+                    <div className="space-y-1">
+                      <Label htmlFor="booking-phone" className="text-xs font-medium text-foreground/80">
                         Phone Number <span className="text-destructive">*</span>
                       </Label>
                       <Input
@@ -399,17 +409,18 @@ export function Booking() {
                         onChange={(e) => updateBooking('phone', e.target.value)}
                         required
                         placeholder="+977 98XXXXXXXX"
+                        className="h-9 text-xs"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="booking-service">
+                    <div className="space-y-1">
+                      <Label htmlFor="booking-service" className="text-xs font-medium text-foreground/80">
                         Service Type <span className="text-destructive">*</span>
                       </Label>
                       <Select
                         value={bookingForm.service}
                         onValueChange={(v) => updateBooking('service', v)}
                       >
-                        <SelectTrigger id="booking-service" className="w-full">
+                        <SelectTrigger id="booking-service" className="w-full h-9 text-xs">
                           <SelectValue placeholder="Select a service" />
                         </SelectTrigger>
                         <SelectContent>
@@ -421,8 +432,8 @@ export function Booking() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="booking-date">
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label htmlFor="booking-date" className="text-xs font-medium text-foreground/80">
                         Preferred Date <span className="text-destructive">*</span>
                       </Label>
                       <Input
@@ -431,16 +442,20 @@ export function Booking() {
                         value={bookingForm.date}
                         onChange={(e) => updateBooking('date', e.target.value)}
                         required
+                        className="h-9 text-xs"
                       />
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="booking-message">Additional Details</Label>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label htmlFor="booking-message" className="text-xs font-medium text-foreground/80">
+                        Additional Details
+                      </Label>
                       <Textarea
                         id="booking-message"
-                        rows={4}
+                        rows={3}
                         value={bookingForm.message}
                         onChange={(e) => updateBooking('message', e.target.value)}
                         placeholder="Tell us about your photography needs..."
+                        className="text-xs resize-none"
                       />
                     </div>
                   </div>
@@ -448,11 +463,11 @@ export function Booking() {
                   <Button
                     type="submit"
                     disabled={bookingSubmitting}
-                    className="mt-6 w-full sm:w-auto bg-gold text-black hover:bg-gold/90 font-semibold h-12 px-8"
+                    className="w-full bg-gold text-black hover:bg-gold/90 font-semibold h-9 px-6 text-xs uppercase tracking-wider transition-transform active:scale-95"
                   >
                     {bookingSubmitting ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Submitting...
                       </>
                     ) : (
                       'Book Now'
@@ -472,9 +487,9 @@ export function Booking() {
                       onReset={() => setPaymentSuccess(null)}
                     />
                   ) : (
-                    <form onSubmit={onPaymentSubmit} className="space-y-5">
+                    <form onSubmit={onPaymentSubmit} className="space-y-3.5">
                       {/* Wallet Gateway Selector */}
-                      <div className="grid grid-cols-2 gap-3 p-2 bg-secondary/60 border border-border rounded-xl">
+                      <div className="grid grid-cols-2 gap-2.5 p-1.5 bg-secondary/60 border border-border rounded-xl">
                         <GatewayTab
                           active={gateway === 'esewa'}
                           onClick={() => setGateway('esewa')}
@@ -489,9 +504,9 @@ export function Booking() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                          <Label htmlFor="pay-name">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div className="space-y-1">
+                          <Label htmlFor="pay-name" className="text-xs font-medium text-foreground/80">
                             Full Name <span className="text-destructive">*</span>
                           </Label>
                           <Input
@@ -500,11 +515,12 @@ export function Booking() {
                             onChange={(e) => updatePayment('name', e.target.value)}
                             placeholder="Your full name"
                             required
+                            className="h-9 text-xs"
                           />
                         </div>
 
-                        <div className="space-y-2">
-                          <Label htmlFor="pay-phone">
+                        <div className="space-y-1">
+                          <Label htmlFor="pay-phone" className="text-xs font-medium text-foreground/80">
                             Phone Number <span className="text-destructive">*</span>
                           </Label>
                           <Input
@@ -514,17 +530,20 @@ export function Booking() {
                             onChange={(e) => updatePayment('phone', e.target.value)}
                             placeholder="+977 98XXXXXXXX"
                             required
+                            className="h-9 text-xs"
                           />
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="pay-package">Select Service Package</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="pay-package" className="text-xs font-medium text-foreground/80">
+                          Select Service Package
+                        </Label>
                         <Select
                           value={paymentForm.packageKey}
                           onValueChange={(v) => updatePayment('packageKey', v)}
                         >
-                          <SelectTrigger id="pay-package" className="w-full">
+                          <SelectTrigger id="pay-package" className="w-full h-9 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -537,13 +556,15 @@ export function Booking() {
                         </Select>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="pay-amount">Advance Amount (NPR)</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="pay-amount" className="text-xs font-medium text-foreground/80">
+                          Advance Amount (NPR)
+                        </Label>
                         <Input
                           id="pay-amount"
                           value={`रु ${selectedPkg.amount.toLocaleString()}`}
                           readOnly
-                          className="bg-secondary font-bold text-base text-foreground"
+                          className="bg-secondary font-bold text-sm text-foreground h-9"
                         />
                       </div>
 
@@ -551,7 +572,7 @@ export function Booking() {
                         type="submit"
                         disabled={paymentSubmitting}
                         className={cn(
-                          'w-full h-12 font-semibold text-white border-0 transition-colors',
+                          'w-full h-9 font-semibold text-white border-0 transition-all text-xs uppercase tracking-wider active:scale-95',
                           gateway === 'esewa'
                             ? 'bg-[#60bb46] hover:bg-[#54a93d]'
                             : 'bg-[#5c2d91] hover:bg-[#4a2475]'
@@ -559,14 +580,14 @@ export function Booking() {
                       >
                         {paymentSubmitting ? (
                           <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing...
+                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Processing...
                           </>
                         ) : (
                           `Pay Rs. ${selectedPkg.amount.toLocaleString()} with ${gateway === 'esewa' ? 'eSewa' : 'Khalti'}`
                         )}
                       </Button>
 
-                      <p className="text-xs text-muted-foreground text-center pt-1">
+                      <p className="text-[11px] text-muted-foreground text-center pt-0.5">
                         Secured with 256-bit encryption &bull; Direct Studio Verification
                       </p>
                     </form>
