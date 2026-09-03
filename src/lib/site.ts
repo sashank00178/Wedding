@@ -12,7 +12,7 @@ export const SITE = {
   locationLabel: "Rainpauwa, Pokhara, Nepal",
   mapLinkUrl: "https://www.google.com/maps/search/?api=1&query=Rainpauwa%2C+Pokhara%2C+Nepal",
   mapEmbedUrl:
-    "https://www.google.com/maps?q=Rainpauwa,Pokhara,Nepal&output=embed",
+    "https://maps.google.com/maps?q=Rainpauwa%2C+Pokhara%2C+Nepal&t=m&z=15&ie=UTF8&iwloc=&output=embed",
   since: "2015",
   footerNote:
     "Professional photography studio specializing in capturing life's most precious moments since 2015 in Nepal.",

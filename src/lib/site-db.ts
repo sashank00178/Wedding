@@ -174,7 +174,10 @@ export async function getFullSiteData() {
     address: settingsMap.address || SITE.address,
     locationLabel: settingsMap.locationLabel || SITE.locationLabel,
     mapLinkUrl: settingsMap.mapLinkUrl || SITE.mapLinkUrl,
-    mapEmbedUrl: settingsMap.mapEmbedUrl || SITE.mapEmbedUrl,
+    mapEmbedUrl:
+      settingsMap.mapEmbedUrl && settingsMap.mapEmbedUrl.includes('t=m')
+        ? settingsMap.mapEmbedUrl
+        : SITE.mapEmbedUrl,
     since: settingsMap.since || SITE.since,
     footerNote: settingsMap.footerNote || SITE.footerNote,
     copyright: settingsMap.copyright || SITE.copyright,

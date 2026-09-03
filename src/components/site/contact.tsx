@@ -71,152 +71,158 @@ export function Contact() {
           subtitle="We welcome you to our professional photography studio in Pokhara, Nepal."
         />
 
-        {/* Cohesive Editorial Split Grid: 7 cols Location / 5 cols Contact */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
-          {/* Left: Prominent Map & Location Showcase (7 Cols) */}
-          <div className="lg:col-span-7 flex flex-col justify-between">
-            {/* Prominent Edge-to-Edge Map Canvas */}
-            <div className="relative w-full h-[360px] sm:h-[430px] rounded-2xl overflow-hidden border border-border/80 shadow-md bg-muted/20">
-              <iframe
-                src={site.mapEmbedUrl}
-                title="Wedding Moment Nepal Location"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="w-full h-full border-0"
-              />
-            </div>
+        {/* Two Balanced, Symmetrically Sized Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch max-w-6xl mx-auto">
+          {/* Left Card: Studio Location & Clean Map */}
+          <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
+            {/* Unified Location Header */}
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="relative h-10 w-10 shrink-0 flex items-center justify-center">
+                    <Image
+                      src="/logo.svg"
+                      alt="Wedding Moment Logo"
+                      width={40}
+                      height={40}
+                      className="h-9 w-9 object-contain drop-shadow-sm"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg sm:text-xl font-bold text-foreground leading-tight">
+                      {site.brand}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {site.address}
+                    </p>
+                  </div>
+                </div>
 
-            {/* Location & Navigation Bar below Map */}
-            <div className="mt-5 p-5 sm:p-6 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="relative h-11 w-11 shrink-0 flex items-center justify-center">
-                  <Image
-                    src="/logo.svg"
-                    alt="Wedding Moment Logo"
-                    width={44}
-                    height={44}
-                    className="h-10 w-10 object-contain drop-shadow-sm"
-                  />
-                </div>
-                <div>
-                  <h4 className="font-serif text-base sm:text-lg font-bold text-foreground leading-tight">
-                    {site.brand}
-                  </h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                    {site.address}
-                  </p>
-                </div>
+                <a
+                  href={site.mapLinkUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold hover:bg-gold/20 transition-all shrink-0 active:scale-95"
+                >
+                  <span>Open in Maps</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
               </div>
 
-              <a
-                href={site.mapLinkUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-xs sm:text-sm font-semibold text-gold hover:bg-gold/20 transition-colors self-start sm:self-auto shrink-0 active:scale-95"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                <span>Open in Maps</span>
-              </a>
+              {/* Clean Roadmap View (Proportional Height, No Popups) */}
+              <div className="relative w-full h-[260px] sm:h-[280px] rounded-xl overflow-hidden border border-border/80 bg-muted/20 my-4 shadow-inner">
+                <iframe
+                  src={site.mapEmbedUrl}
+                  title="Wedding Moment Nepal Location"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full border-0"
+                />
+              </div>
             </div>
+
+            {/* Direct Address Caption */}
+            <p className="text-xs text-muted-foreground leading-relaxed pt-1 border-t border-border/60">
+              Located in the heart of Rainpauwa, Pokhara. Easy studio access with consultations and emergency sessions available on request.
+            </p>
           </div>
 
-          {/* Right: Studio Concierge & Quick Note (5 Cols) */}
-          <div className="lg:col-span-5">
-            <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col justify-between h-full">
-              {/* Header */}
-              <div>
-                <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-                  Send a Direct Note
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                  Have questions about session dates, pricing, or custom packages? Send us a message and our team will get back to you.
-                </p>
+          {/* Right Card: Direct Note & Connected Contacts */}
+          <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
+            <div>
+              {/* Card Header */}
+              <h3 className="font-serif text-lg sm:text-xl font-bold text-foreground">
+                Send a Direct Note
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Have questions about session dates, pricing, or custom packages? Drop us a note below.
+              </p>
 
-                {/* Form */}
-                <form onSubmit={onSubmit} className="mt-6 space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="contact-email" className="text-xs font-medium text-foreground/80">
-                      Your Email Address
-                    </Label>
-                    <Input
-                      id="contact-email"
-                      type="email"
-                      placeholder="name@example.com"
-                      value={form.email}
-                      onChange={(e) => update('email', e.target.value)}
-                      className="h-10 bg-background border-border text-sm focus-visible:ring-gold/50"
-                      required
-                    />
-                  </div>
+              {/* Compact Form */}
+              <form onSubmit={onSubmit} className="mt-4 space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="contact-email" className="text-xs font-medium text-foreground/80">
+                    Your Email Address
+                  </Label>
+                  <Input
+                    id="contact-email"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={form.email}
+                    onChange={(e) => update('email', e.target.value)}
+                    className="h-9 bg-background border-border text-xs focus-visible:ring-gold/50"
+                    required
+                  />
+                </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="contact-message" className="text-xs font-medium text-foreground/80">
-                      Your Message
-                    </Label>
-                    <Textarea
-                      id="contact-message"
-                      rows={4}
-                      placeholder="Tell us about your upcoming event, preferred date, or questions..."
-                      value={form.message}
-                      onChange={(e) => update('message', e.target.value)}
-                      className="bg-background border-border text-sm resize-none focus-visible:ring-gold/50"
-                      required
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <Label htmlFor="contact-message" className="text-xs font-medium text-foreground/80">
+                    Your Message
+                  </Label>
+                  <Textarea
+                    id="contact-message"
+                    rows={3}
+                    placeholder="Tell us about your upcoming event, preferred dates, or questions..."
+                    value={form.message}
+                    onChange={(e) => update('message', e.target.value)}
+                    className="bg-background border-border text-xs resize-none focus-visible:ring-gold/50"
+                    required
+                  />
+                </div>
 
-                  <div className="pt-1 flex justify-end">
-                    <Button
-                      type="submit"
-                      disabled={submitting}
-                      className="h-9 px-6 text-xs font-semibold uppercase tracking-wider bg-gold text-black hover:bg-gold/90 transition-transform active:scale-95"
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        'Send Message'
-                      )}
-                    </Button>
-                  </div>
-                </form>
+                <div className="pt-0.5 flex justify-end">
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    size="sm"
+                    className="h-8 px-5 text-xs font-semibold uppercase tracking-wider bg-gold text-black hover:bg-gold/90 transition-transform active:scale-95"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      'Send Message'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+
+            {/* Connected Footer Block: Direct Contacts & Socials */}
+            <div className="border-t border-border/70 pt-3.5 mt-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
+                    Call Studio
+                  </span>
+                  <a
+                    href={`tel:${site.phone.replace(/\s/g, '')}`}
+                    className="font-semibold text-foreground hover:text-gold transition-colors text-xs"
+                  >
+                    {site.phone}
+                  </a>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
+                    Email Studio
+                  </span>
+                  <a
+                    href={`mailto:${site.email}`}
+                    className="font-semibold text-foreground hover:text-gold transition-colors text-xs truncate block"
+                  >
+                    {site.email}
+                  </a>
+                </div>
               </div>
 
-              {/* Direct Reach & Social Channels */}
-              <div className="mt-8 pt-6 border-t border-border/70 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-                  <div>
-                    <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
-                      Call Studio
-                    </span>
-                    <a
-                      href={`tel:${site.phone.replace(/\s/g, '')}`}
-                      className="font-semibold text-foreground hover:text-gold transition-colors text-sm"
-                    >
-                      {site.phone}
-                    </a>
-                  </div>
-
-                  <div>
-                    <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
-                      Email Studio
-                    </span>
-                    <a
-                      href={`mailto:${site.email}`}
-                      className="font-semibold text-foreground hover:text-gold transition-colors text-sm"
-                    >
-                      {site.email}
-                    </a>
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-border/50 flex items-center justify-between">
-                  <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
-                    Follow Our Work
-                  </span>
-                  <SocialLinks />
-                </div>
+              <div className="pt-2 border-t border-border/50 flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                  Follow Our Work
+                </span>
+                <SocialLinks buttonClassName="h-8 w-8" />
               </div>
             </div>
           </div>
