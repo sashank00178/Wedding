@@ -245,14 +245,14 @@ export function Booking() {
 
   return (
     <Section id="booking" className="py-20 sm:py-28 bg-background">
-      <div className="container mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionTitle
           eyebrow="Reserve your date"
           title="Book a Session"
           subtitle="Schedule your photography session with us. We will get back to you within 24 hours."
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch w-full">
           {/* Left: Info Card (Matching right card in structure & padding) */}
           <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
             <div>

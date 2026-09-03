@@ -72,7 +72,7 @@ export function Contact() {
         />
 
         {/* Two Balanced, Symmetrically Sized Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch w-full">
           {/* Left Card: Studio Location & Clean Map */}
           <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
             {/* Unified Location Header */}
