@@ -2,10 +2,26 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Camera, Facebook, Instagram, Music2, Phone } from 'lucide-react'
+import Image from 'next/image'
 import { SITE, NAV_LINKS, SERVICES, STUDIO_HOURS } from '@/lib/site'
+import { SocialLinks } from '@/components/site/social-links'
 
 export function Footer() {
+  const [site, setSite] = React.useState(SITE)
+  const [servicesList, setServicesList] = React.useState(SERVICES)
+  const [hoursList, setHoursList] = React.useState<{ day: string; time: string }[]>(STUDIO_HOURS)
+
+  React.useEffect(() => {
+    fetch('/api/site-data')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.site) setSite(data.site)
+        if (data?.services?.length) setServicesList(data.services)
+        if (data?.hours?.length) setHoursList(data.hours)
+      })
+      .catch(() => {})
+  }, [])
+
   const handleNavClick = (e: React.MouseEvent, href: string) => {
     e.preventDefault()
     const el = document.querySelector(href)
@@ -16,7 +32,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-foreground text-background mt-auto">
+    <footer className="bg-card border-t border-border text-foreground mt-auto">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
@@ -24,29 +40,30 @@ export function Footer() {
             <Link
               href="#home"
               onClick={(e) => handleNavClick(e, '#home')}
-              className="flex items-center gap-2 mb-4"
+              className="flex items-center gap-3 mb-4 group"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-gold text-gold">
-                <Camera className="h-4 w-4" />
-              </span>
-              <span className="font-serif text-xl font-bold text-background">
+              <div className="relative h-10 w-10 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Image
+                  src="/logo.svg"
+                  alt="Wedding Moment Logo"
+                  width={40}
+                  height={40}
+                  className="h-9 w-9 object-contain drop-shadow-sm"
+                />
+              </div>
+              <span className="font-serif text-xl font-bold text-foreground">
                 Wedding<span className="text-gold">Moment</span>
               </span>
             </Link>
-            <p className="text-sm text-background/70 leading-relaxed mb-5">
-              {SITE.footerNote}
+            <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+              {site.footerNote}
             </p>
-            <div className="flex items-center gap-3">
-              <SocialIcon icon={<Facebook className="h-4 w-4" />} label="Facebook" />
-              <SocialIcon icon={<Instagram className="h-4 w-4" />} label="Instagram" />
-              <SocialIcon icon={<Music2 className="h-4 w-4" />} label="TikTok" />
-              <SocialIcon icon={<Phone className="h-4 w-4" />} label="Viber" />
-            </div>
+            <SocialLinks />
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-serif text-lg font-semibold mb-5 relative inline-block">
+            <h3 className="font-serif text-lg font-semibold mb-5 relative inline-block text-foreground">
               Quick Links
               <span className="absolute -bottom-2 left-0 h-0.5 w-10 bg-gold" />
             </h3>
@@ -56,7 +73,7 @@ export function Footer() {
                   <a
                     href={link.href}
                     onClick={(e) => handleNavClick(e, link.href)}
-                    className="text-sm text-background/70 hover:text-gold transition-colors"
+                    className="text-sm text-muted-foreground hover:text-gold transition-colors"
                   >
                     {link.label}
                   </a>
@@ -67,17 +84,17 @@ export function Footer() {
 
           {/* Services */}
           <div>
-            <h3 className="font-serif text-lg font-semibold mb-5 relative inline-block">
+            <h3 className="font-serif text-lg font-semibold mb-5 relative inline-block text-foreground">
               Our Services
               <span className="absolute -bottom-2 left-0 h-0.5 w-10 bg-gold" />
             </h3>
             <ul className="space-y-3 mt-4">
-              {SERVICES.map((s) => (
+              {servicesList.map((s) => (
                 <li key={s.key}>
                   <a
                     href="#services"
                     onClick={(e) => handleNavClick(e, '#services')}
-                    className="text-sm text-background/70 hover:text-gold transition-colors"
+                    className="text-sm text-muted-foreground hover:text-gold transition-colors"
                   >
                     {s.title}
                   </a>
@@ -88,29 +105,29 @@ export function Footer() {
 
           {/* Studio Hours */}
           <div>
-            <h3 className="font-serif text-lg font-semibold mb-5 relative inline-block">
+            <h3 className="font-serif text-lg font-semibold mb-5 relative inline-block text-foreground">
               Studio Hours
               <span className="absolute -bottom-2 left-0 h-0.5 w-10 bg-gold" />
             </h3>
             <ul className="space-y-3 mt-4">
-              {STUDIO_HOURS.map((row) => (
+              {hoursList.map((row, i) => (
                 <li
-                  key={row.day}
-                  className="text-sm text-background/70 leading-relaxed"
+                  key={i}
+                  className="text-sm text-muted-foreground leading-relaxed"
                 >
-                  <span className="block text-background font-medium">
-                    {row.day}
+                  <span className="block text-foreground font-medium">
+                    {row.day.replace(/–/g, 'to')}
                   </span>
-                  <span className="text-background/60">{row.time}</span>
+                  <span className="text-muted-foreground/80">{row.time.replace(/–/g, 'to')}</span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        <div className="pt-6 border-t border-background/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-background/60 text-center sm:text-left">
+        <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground text-center sm:text-left">
           <p>
-            &copy; {new Date().getFullYear()} {SITE.copyright}. All rights
+            &copy; {new Date().getFullYear()} {site.copyright}. All rights
             reserved.
           </p>
           <p className="flex items-center gap-1.5">
@@ -120,23 +137,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
-}
-
-function SocialIcon({
-  icon,
-  label,
-}: {
-  icon: React.ReactNode
-  label: string
-}) {
-  return (
-    <a
-      href="#"
-      aria-label={label}
-      className="h-9 w-9 rounded-full bg-background/10 hover:bg-gold hover:text-black text-background flex items-center justify-center transition-colors"
-    >
-      {icon}
-    </a>
   )
 }

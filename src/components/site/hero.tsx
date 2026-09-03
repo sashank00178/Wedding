@@ -6,6 +6,19 @@ import { ChevronDown } from 'lucide-react'
 import { SITE } from '@/lib/site'
 
 export function Hero() {
+  const [site, setSite] = React.useState(SITE)
+
+  React.useEffect(() => {
+    fetch('/api/site-data')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.site) {
+          setSite(data.site)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const handleScroll = (href: string) => (e: React.MouseEvent) => {
     e.preventDefault()
     const el = document.querySelector(href)
@@ -34,16 +47,6 @@ export function Hero() {
       />
 
       <div className="relative z-10 container mx-auto max-w-4xl px-4 sm:px-6 text-center text-white">
-        <div
-          className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full border border-gold/50 bg-black/30 backdrop-blur-sm"
-          style={{ animation: 'fadeIn 0.6s ease both' }}
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" />
-          <span className="text-xs sm:text-sm tracking-widest uppercase text-gold font-medium">
-            Photography Studio · Pokhara, Nepal · Since {SITE.since}
-          </span>
-        </div>
-
         <h1
           className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6"
           style={{ animation: 'fadeUp 0.8s ease 0.1s both' }}
@@ -57,7 +60,7 @@ export function Hero() {
           className="text-base sm:text-lg md:text-xl text-white/85 max-w-2xl mx-auto mb-10 leading-relaxed"
           style={{ animation: 'fadeUp 0.8s ease 0.25s both' }}
         >
-          {SITE.heroSubtitle}
+          {site.heroSubtitle}
         </p>
 
         <div
@@ -67,7 +70,7 @@ export function Hero() {
           <Button
             asChild
             size="lg"
-            className="bg-gold text-black hover:bg-gold/90 font-semibold px-8 h-12 text-base"
+            className="bg-gold text-black hover:bg-gold/90 font-semibold px-8 h-12 text-base shadow-lg hover:shadow-gold/20"
           >
             <a href="#booking" onClick={handleScroll('#booking')}>
               Book a Session
@@ -84,6 +87,14 @@ export function Hero() {
             </a>
           </Button>
         </div>
+
+        {/* Relocated studio info — clean, unboxed, gold text */}
+        <p
+          className="mt-8 sm:mt-10 text-xs sm:text-sm tracking-[0.25em] uppercase text-gold/90 font-medium"
+          style={{ animation: 'fadeUp 0.8s ease 0.5s both' }}
+        >
+          Photography Studio · Pokhara, Nepal · Since {site.since}
+        </p>
       </div>
 
       {/* Scroll-down indicator */}

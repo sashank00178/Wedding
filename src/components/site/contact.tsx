@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { Loader2, MapPin, Phone, Mail, ExternalLink } from 'lucide-react'
 import { SITE } from '@/lib/site'
+import { SocialLinks } from '@/components/site/social-links'
 
 export function Contact() {
+  const [site, setSite] = React.useState(SITE)
   const [submitting, setSubmitting] = React.useState(false)
   const [form, setForm] = React.useState({
     name: '',
@@ -18,6 +20,15 @@ export function Contact() {
     subject: '',
     message: '',
   })
+
+  React.useEffect(() => {
+    fetch('/api/site-data')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.site) setSite(data.site)
+      })
+      .catch(() => {})
+  }, [])
 
   const update = (k: keyof typeof form, v: string) =>
     setForm((prev) => ({ ...prev, [k]: v }))
@@ -58,14 +69,14 @@ export function Contact() {
         <SectionTitle
           eyebrow="Get in touch"
           title="Contact Us"
-          subtitle="Get in touch with Wedding Moment Nepal — we'd love to hear from you."
+          subtitle="Get in touch with Wedding Moment Nepal. We would love to hear from you."
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch">
           {/* Left: info */}
           <div className="bg-card border border-border rounded-xl p-7 sm:p-9">
             <h3 className="font-serif text-2xl font-bold mb-3">
-              {SITE.brand}
+              {site.brand}
             </h3>
             <p className="text-muted-foreground leading-relaxed mb-8">
               Visit our professional photography studio located in Pokhara,
@@ -76,7 +87,7 @@ export function Contact() {
               <ContactRow
                 icon={<MapPin className="h-4 w-4" />}
                 title="Address"
-                lines={[SITE.address]}
+                lines={[site.address]}
               />
 
               <div className="rounded-lg border border-border/70 bg-muted/40 p-4">
@@ -86,11 +97,11 @@ export function Contact() {
                       See our location
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      {SITE.locationLabel}
+                      {site.locationLabel}
                     </p>
                   </div>
                   <a
-                    href={SITE.mapLinkUrl}
+                    href={site.mapLinkUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-sm font-medium text-gold transition-colors hover:bg-gold/20"
@@ -102,7 +113,7 @@ export function Contact() {
 
                 <div className="mt-4 overflow-hidden rounded-lg border border-border">
                   <iframe
-                    src={SITE.mapEmbedUrl}
+                    src={site.mapEmbedUrl}
                     title="Wedding Moment Nepal location"
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
@@ -113,15 +124,22 @@ export function Contact() {
               <ContactRow
                 icon={<Phone className="h-4 w-4" />}
                 title="Phone"
-                lines={[SITE.phone]}
-                href={`tel:${SITE.phone.replace(/\s/g, '')}`}
+                lines={[site.phone]}
+                href={`tel:${site.phone.replace(/\s/g, '')}`}
               />
               <ContactRow
                 icon={<Mail className="h-4 w-4" />}
                 title="Email"
-                lines={[SITE.email]}
-                href={`mailto:${SITE.email}`}
+                lines={[site.email]}
+                href={`mailto:${site.email}`}
               />
+
+              <div className="pt-4 border-t border-border">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">
+                  Connect With Us
+                </p>
+                <SocialLinks />
+              </div>
             </div>
           </div>
 

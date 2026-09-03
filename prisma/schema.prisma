@@ -298,7 +298,7 @@ model Coupon {
 }
 
 // ============================================================
-//  LEGACY — Wedding Moment Nepal models (kept for backward compat)
+//  WEDDING MOMENT NEPAL — STUDIO & SITE CONTENT
 // ============================================================
 
 model Booking {
@@ -309,24 +309,33 @@ model Booking {
   service   String
   date      String
   message   String?
-  status    String   @default("pending")
+  status    String   @default("pending") // pending | confirmed | completed | cancelled
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("bookings")
 }
 
 model PaymentOrder {
   id              String   @id @default(cuid())
-  gateway         String
+  gateway         String   // esewa | khalti | bank
   customerName    String
   customerPhone   String
   packageName     String
   amount          Float
   transactionUuid String   @unique
   pidx            String?
-  status          String   @default("initiated")
+  status          String   @default("initiated") // initiated | paid | pending | failed | refunded
   rawResponse     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@index([gateway])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payment_orders")
 }
 
 model ContactMessage {
@@ -336,4 +345,72 @@ model ContactMessage {
   subject   String
   message   String
   createdAt DateTime @default(now())
+
+  @@map("contact_messages")
 }
+
+model GalleryPhoto {
+  id          String   @id @default(cuid())
+  src         String
+  title       String
+  category    String   // wedding | portrait | commercial | event
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([order])
+  @@map("gallery_photos")
+}
+
+model StudioService {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  description String
+  priceFrom   Float    @default(0)
+  priceLabel  String
+  icon        String   @default("camera")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+  @@map("studio_services")
+}
+
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model StudioHour {
+  id        String   @id @default(cuid())
+  day       String
+  time      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+  @@map("studio_hours")
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  label     String
+  icon      String
+  href      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+  @@map("social_links")
+}
+

@@ -25,7 +25,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { jwtVerify } from 'jose'
+import { getToken } from 'next-auth/jwt'
 
 // ── CORS Configuration ──────────────────────────────────────────────
 
@@ -77,11 +77,6 @@ interface RouteRule {
 const ROUTE_RULES: RouteRule[] = [
   // ── Admin routes: require admin role ──────────────────────────
   { matcher: '/api/admin/', level: 'admin' },
-
-  // ── Protected customer routes ──────────────────────────────────
-  { matcher: '/api/checkout', level: 'auth', methods: ['POST'] },
-  { matcher: '/api/orders', level: 'auth' },
-  { matcher: '/api/cart/', level: 'auth', methods: ['POST', 'PUT', 'DELETE'] },
 ]
 
 // ── Blocked paths (security) ────────────────────────────────────────
@@ -93,31 +88,8 @@ const BLOCKED_PATHS = [
 ]
 
 // ── Max request body size for API routes (early rejection) ───────────
-const MAX_PAYLOAD_SIZE = 2 * 1024 * 1024 // 2 MB
-
-// ── Helpers ───────────────────────────────────────────────────────
-
-function getSessionToken(request: NextRequest): string | null {
-  const cookies = request.cookies
-  return (
-    cookies.get('next-auth.session-token')?.value ??
-    cookies.get('__Secure-next-auth.session-token')?.value ??
-    null
-  )
-}
-
-async function verifyToken(
-  token: string,
-  secret: string
-): Promise<Record<string, unknown> | null> {
-  try {
-    const secretKey = new TextEncoder().encode(secret)
-    const { payload } = await jwtVerify(token, secretKey)
-    return payload as Record<string, unknown>
-  } catch {
-    return null
-  }
-}
+const MAX_PAYLOAD_SIZE = 2 * 1024 * 1024 // 2 MB default
+const UPLOAD_PAYLOAD_SIZE = 15 * 1024 * 1024 // 15 MB for photo uploads
 
 function findRule(
   pathname: string,
@@ -173,9 +145,12 @@ export async function proxy(request: NextRequest) {
 
   // ── 3. Payload size guard ──────────────────────────────────────
   const contentLength = request.headers.get('content-length')
-  if (contentLength && parseInt(contentLength, 10) > MAX_PAYLOAD_SIZE) {
+  const isUploadRoute = pathname.startsWith('/api/admin/upload')
+  const allowedSize = isUploadRoute ? UPLOAD_PAYLOAD_SIZE : MAX_PAYLOAD_SIZE
+
+  if (contentLength && parseInt(contentLength, 10) > allowedSize) {
     return NextResponse.json(
-      { error: 'Request body too large. Maximum size is 2MB.' },
+      { error: `Request body too large. Maximum size is ${isUploadRoute ? '15MB' : '2MB'}.` },
       { status: 413 }
     )
   }
@@ -186,7 +161,6 @@ export async function proxy(request: NextRequest) {
   // ── 5. For non-protected routes: add CORS and pass through ─────
   if (!rule) {
     const response = NextResponse.next()
-    // Add CORS headers for non-protected routes too
     const corsHeaders = getCorsHeaders(request)
     for (const [key, value] of Object.entries(corsHeaders)) {
       response.headers.set(key, value)
@@ -204,16 +178,12 @@ export async function proxy(request: NextRequest) {
     )
   }
 
-  const token = getSessionToken(request)
-  if (!token) {
-    return NextResponse.json(
-      { error: 'Authentication required. Please sign in.' },
-      { status: 401 }
-    )
-  }
+  const token = await getToken({
+    req: request,
+    secret,
+  })
 
-  const payload = await verifyToken(token, secret)
-  if (!payload) {
+  if (!token) {
     return NextResponse.json(
       { error: 'Session expired. Please sign in again.' },
       { status: 401 }
@@ -222,7 +192,7 @@ export async function proxy(request: NextRequest) {
 
   // ── 7. Role check for admin routes ──────────────────────────────
   if (rule.level === 'admin') {
-    const role = payload.role as string | undefined
+    const role = token.role as string | undefined
     if (role !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required.' },
@@ -233,9 +203,9 @@ export async function proxy(request: NextRequest) {
 
   // ── 8. Inject user info + CORS headers for downstream handlers ──
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-user-id', (payload.id as string) || '')
-  requestHeaders.set('x-user-role', (payload.role as string) || '')
-  requestHeaders.set('x-user-email', (payload.email as string) || '')
+  requestHeaders.set('x-user-id', (token.id as string) || (token.sub as string) || '')
+  requestHeaders.set('x-user-role', (token.role as string) || '')
+  requestHeaders.set('x-user-email', (token.email as string) || '')
 
   const response = NextResponse.next({
     request: {

@@ -27,7 +27,8 @@ export interface ServiceInfo {
   description: string
   priceFrom: number
   priceLabel: string
-  icon: string // lucide icon name
+  icon?: string
+  image?: string
 }
 
 export const SERVICES: ServiceInfo[] = [
@@ -39,6 +40,7 @@ export const SERVICES: ServiceInfo[] = [
     priceFrom: 2999,
     priceLabel: "रु 2,999+",
     icon: "camera",
+    image: "/gallery/portrait1.jpg",
   },
   {
     key: "wedding",
@@ -48,6 +50,7 @@ export const SERVICES: ServiceInfo[] = [
     priceFrom: 14999,
     priceLabel: "रु 14,999+",
     icon: "heart",
+    image: "/gallery/wedding1.jpg",
   },
   {
     key: "commercial",
@@ -57,6 +60,7 @@ export const SERVICES: ServiceInfo[] = [
     priceFrom: 4999,
     priceLabel: "रु 4,999+",
     icon: "briefcase",
+    image: "/gallery/commercial1.jpg",
   },
   {
     key: "event",
@@ -66,6 +70,7 @@ export const SERVICES: ServiceInfo[] = [
     priceFrom: 6499,
     priceLabel: "रु 6,499+",
     icon: "video",
+    image: "/gallery/event1.jpg",
   },
 ]
 
@@ -83,49 +88,49 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     src: "/gallery/wedding1.jpg",
     title: "Sacred Vows",
     category: "wedding",
-    description: "A traditional Nepali wedding ceremony bathed in golden hour light — love and tradition intertwined.",
+    description: "A traditional Nepali wedding ceremony bathed in golden hour light, capturing love and tradition intertwined.",
   },
   {
     src: "/gallery/wedding2.jpg",
     title: "Petals & Dreams",
     category: "wedding",
-    description: "A dreamy bridal portrait with flower petals and soft bokeh — elegance in every frame.",
+    description: "A dreamy bridal portrait with flower petals and soft bokeh, bringing elegance to every frame.",
   },
   {
     src: "/gallery/portrait1.jpg",
     title: "Quiet Confidence",
     category: "portrait",
-    description: "Editorial studio portrait with dramatic rim lighting — personality framed in shadow and light.",
+    description: "Editorial studio portrait with dramatic rim lighting, framing personality in shadow and light.",
   },
   {
     src: "/gallery/portrait2.jpg",
     title: "Family Moments",
     category: "portrait",
-    description: "Candid family portrait at sunset — genuine smiles and warm backlight on a golden afternoon.",
+    description: "Candid family portrait at sunset, featuring genuine smiles and warm backlight on a golden afternoon.",
   },
   {
     src: "/gallery/commercial1.jpg",
     title: "Timeless Luxury",
     category: "commercial",
-    description: "High-end product photography with marble textures and studio precision — crafted for brands.",
+    description: "High-end product photography with marble textures and studio precision, crafted for brands.",
   },
   {
     src: "/gallery/commercial2.jpg",
     title: "Culinary Art",
     category: "commercial",
-    description: "Magazine-quality food photography — gourmet plating captured with warm, inviting tones.",
+    description: "Magazine-quality food photography with gourmet plating, captured in warm and inviting tones.",
   },
   {
     src: "/gallery/event1.jpg",
     title: "Stage Energy",
     category: "event",
-    description: "Live concert photography with dynamic lighting — the raw energy of performance frozen in time.",
+    description: "Live concert photography with dynamic lighting, capturing the raw energy of live performance.",
   },
   {
     src: "/gallery/event2.jpg",
     title: "Gala Evening",
     category: "event",
-    description: "Elegant outdoor gala under string lights — sophisticated event coverage with warm atmosphere.",
+    description: "Elegant outdoor gala under string lights with sophisticated event coverage.",
   },
 ]
 
@@ -139,13 +144,12 @@ export const NAV_LINKS: NavLink[] = [
   { href: "#services", label: "Services" },
   { href: "#gallery", label: "Gallery" },
   { href: "#booking", label: "Booking" },
-  { href: "#payment", label: "Payment" },
   { href: "#contact", label: "Contact" },
 ]
 
 export const STUDIO_HOURS = [
-  { day: "Sunday – Friday", time: "10:00 AM – 7:00 PM" },
-  { day: "Saturday", time: "11:00 AM – 5:00 PM" },
+  { day: "Sunday to Friday", time: "10:00 AM to 7:00 PM" },
+  { day: "Saturday", time: "11:00 AM to 5:00 PM" },
   { day: "Emergency Sessions", time: "Available on request" },
   { day: "Nepali Public Holidays", time: "Closed" },
 ]

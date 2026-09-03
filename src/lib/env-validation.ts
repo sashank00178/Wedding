@@ -44,20 +44,6 @@ const ENV_SPECS: EnvVarSpec[] = [
     example: 'https://yourdomain.com',
   },
   {
-    name: 'STRIPE_SECRET_KEY',
-    required: true,
-    requiredDev: false,
-    description: 'Stripe secret API key (starts with sk_test_ or sk_live_)',
-    example: 'sk_test_51abcdef...',
-  },
-  {
-    name: 'STRIPE_WEBHOOK_SECRET',
-    required: true,
-    requiredDev: false,
-    description: 'Stripe webhook signing secret (starts with whsec_)',
-    example: 'whsec_abcdef...',
-  },
-  {
     name: 'RESEND_API_KEY',
     required: true,
     requiredDev: false,

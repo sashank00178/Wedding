@@ -1,20 +1,21 @@
 'use client'
 
 import * as React from 'react'
-import { Camera, Heart, Briefcase, Video, ArrowRight } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowRight } from 'lucide-react'
 import { Section, SectionTitle } from '@/components/site/section'
 import { SERVICES, type ServiceInfo } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
-const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  camera: Camera,
-  heart: Heart,
-  briefcase: Briefcase,
-  video: Video,
+const SERVICE_IMAGES: Record<string, string> = {
+  portrait: '/gallery/portrait1.jpg',
+  wedding: '/gallery/wedding1.jpg',
+  commercial: '/gallery/commercial1.jpg',
+  event: '/gallery/event1.jpg',
 }
 
 function ServiceCard({ service }: { service: ServiceInfo }) {
-  const Icon = ICONS[service.icon] ?? Camera
+  const imageSrc = service.image || SERVICE_IMAGES[service.key] || '/gallery/wedding1.jpg'
 
   const handleBook = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -33,21 +34,30 @@ function ServiceCard({ service }: { service: ServiceInfo }) {
   return (
     <article
       className={cn(
-        'group relative bg-card border border-border rounded-xl p-7 transition-all duration-300',
-        'hover:shadow-xl hover:border-gold/50 hover:-translate-y-1'
+        'group relative bg-card border border-border rounded-xl p-5 sm:p-6 transition-all duration-300',
+        'hover:shadow-xl hover:border-gold/50 hover:-translate-y-1 flex flex-col justify-between'
       )}
     >
-      <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gold/10 text-gold border border-gold/20 group-hover:bg-gold group-hover:text-black transition-all">
-        <Icon className="h-6 w-6" />
+      <div>
+        {/* Real photography image representing the service */}
+        <div className="relative aspect-[16/10] w-full rounded-lg overflow-hidden mb-5 bg-secondary border border-border/60">
+          <Image
+            src={imageSrc}
+            alt={service.title}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        </div>
+
+        <h3 className="font-serif text-xl font-bold text-foreground mb-2">
+          {service.title}
+        </h3>
+
+        <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+          {service.description}
+        </p>
       </div>
-
-      <h3 className="font-serif text-xl font-bold text-foreground mb-3">
-        {service.title}
-      </h3>
-
-      <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-        {service.description}
-      </p>
 
       <div className="flex items-center justify-between pt-4 border-t border-border">
         <div>
@@ -60,7 +70,7 @@ function ServiceCard({ service }: { service: ServiceInfo }) {
         </div>
         <button
           onClick={handleBook}
-          className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-foreground/80 hover:text-gold transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-foreground/80 hover:text-gold transition-colors"
         >
           Book
           <ArrowRight className="h-3 w-3" />
@@ -71,6 +81,19 @@ function ServiceCard({ service }: { service: ServiceInfo }) {
 }
 
 export function Services() {
+  const [serviceList, setServiceList] = React.useState<ServiceInfo[]>(SERVICES)
+
+  React.useEffect(() => {
+    fetch('/api/site-data')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.services && data.services.length > 0) {
+          setServiceList(data.services)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <Section id="services" className="py-20 sm:py-28 bg-background">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -81,7 +104,7 @@ export function Services() {
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {SERVICES.map((service) => (
+          {serviceList.map((service) => (
             <ServiceCard key={service.key} service={service} />
           ))}
         </div>

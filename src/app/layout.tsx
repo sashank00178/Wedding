@@ -33,10 +33,15 @@ export const metadata: Metadata = {
     "Khalti Payment",
   ],
   authors: [{ name: "Wedding Moment Nepal" }],
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/logo.svg",
+  },
   openGraph: {
     title: "Wedding Moment Nepal | Professional Photography",
     description:
-      "Capture your precious moments with Wedding Moment Nepal — portrait, wedding, commercial & event photography in Pokhara.",
+      "Capture your precious moments with Wedding Moment Nepal, specializing in portrait, wedding, commercial, and event photography in Pokhara.",
     type: "website",
     locale: "en_US",
   },

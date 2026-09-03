@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Image from 'next/image'
 import { Section, SectionTitle } from '@/components/site/section'
-import { GALLERY_ITEMS, type GalleryCategory } from '@/lib/site'
+import { GALLERY_ITEMS, type GalleryCategory, type GalleryItem } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 type Filter = 'all' | GalleryCategory
@@ -18,11 +18,23 @@ const FILTERS: { key: Filter; label: string }[] = [
 
 export function Gallery() {
   const [filter, setFilter] = React.useState<Filter>('all')
+  const [galleryItems, setGalleryItems] = React.useState<GalleryItem[]>(GALLERY_ITEMS)
+
+  React.useEffect(() => {
+    fetch('/api/site-data')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.gallery && data.gallery.length > 0) {
+          setGalleryItems(data.gallery)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const items = React.useMemo(() => {
-    if (filter === 'all') return GALLERY_ITEMS
-    return GALLERY_ITEMS.filter((item) => item.category === filter)
-  }, [filter])
+    if (filter === 'all') return galleryItems
+    return galleryItems.filter((item) => item.category === filter)
+  }, [filter, galleryItems])
 
   return (
     <Section id="gallery" className="py-20 sm:py-28 bg-secondary/40">
