@@ -497,33 +497,47 @@ export default function WeddingPhotographyPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12">
                   
                   {/* Left Column: Real Photography Visual */}
-                  <div className="lg:col-span-5 relative min-h-[320px] lg:min-h-full bg-secondary">
+                  <div className="lg:col-span-5 relative min-h-[360px] sm:min-h-[440px] lg:min-h-full bg-secondary overflow-hidden">
                     <Image
                       src={currentConfig.image}
                       alt={`${currentConfig.title} Wedding Photography Nepal`}
                       fill
-                      sizes="(max-width: 1024px) 100vw, 40vw"
-                      className="object-cover"
+                      priority
+                      unoptimized
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className={cn(
+                        "object-cover transition-transform duration-700 hover:scale-105",
+                        activeMainCat === 'bride'
+                          ? "object-[center_12%]"
+                          : activeMainCat === 'groom'
+                          ? "object-[center_10%]"
+                          : "object-[center_35%]"
+                      )}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent lg:hidden" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent lg:hidden pointer-events-none" />
                     
                     {/* Floating Status Pill */}
-                    <div className="absolute top-4 left-4">
+                    <div className="absolute top-4 left-4 z-10">
                       <span className="px-3 py-1 rounded-full bg-black/80 backdrop-blur-md text-gold text-xs font-bold uppercase tracking-wider border border-gold/40 shadow-sm flex items-center gap-1.5">
                         <Sparkles className="h-3 w-3" />
                         <span>All Included Package</span>
                       </span>
                     </div>
 
-                    {/* Bottom overlay badge on image */}
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-white/10 text-white">
-                        <div className="text-[11px] font-semibold text-gold uppercase tracking-wider">
-                          {currentConfig.title} Specialization
+                    {/* Sleek Bottom overlay badge on image */}
+                    <div className="absolute bottom-3.5 left-3.5 right-3.5 z-10 pointer-events-none">
+                      <div className="bg-black/80 backdrop-blur-md rounded-xl px-3.5 py-2 border border-white/10 text-white shadow-lg flex items-center justify-between gap-2">
+                        <div>
+                          <div className="text-[10px] font-bold text-gold uppercase tracking-wider">
+                            {currentConfig.title} Specialization
+                          </div>
+                          <div className="text-xs text-white/90 font-medium">
+                            {currentConfig.allIncludedEvents.length} Ceremonies Covered in Full
+                          </div>
                         </div>
-                        <div className="text-xs text-white/90 mt-0.5">
-                          {currentConfig.allIncludedEvents.length} Ceremonies Covered in Full
-                        </div>
+                        <span className="text-[10px] font-semibold text-gold/90 px-2 py-0.5 rounded bg-gold/10 border border-gold/20 shrink-0">
+                          HD Quality
+                        </span>
                       </div>
                     </div>
                   </div>

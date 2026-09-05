@@ -204,7 +204,7 @@ export const WEDDING_CATEGORIES: Record<WeddingMainCategoryKey, WeddingCategoryC
     badge: 'Ceremonial Coverage',
     price: 35000,
     priceLabel: 'NPR 35,000',
-    image: '/gallery/bride1.jpg',
+    image: '/gallery/weddings/DSC03954_bride_portrait.jpg',
     subCategories: [
       'Bride to Be',
       'Engagement',
@@ -275,7 +275,7 @@ export const WEDDING_CATEGORIES: Record<WeddingMainCategoryKey, WeddingCategoryC
     badge: 'Baraat & Reception',
     price: 40000,
     priceLabel: 'NPR 40,000',
-    image: '/gallery/groom1.jpg',
+    image: '/gallery/weddings/D93A9617_groom_portrait.jpg',
     subCategories: [
       'Engagement',
       'Marriage',
