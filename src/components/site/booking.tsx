@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { SERVICES, SITE, type ServiceInfo } from '@/lib/site'
 import { cn } from '@/lib/utils'
+import { WhatsAppIcon, STUDIO_WHATSAPP_PHONE } from '@/components/site/whatsapp-button'
 
 type TabMode = 'booking' | 'advance'
 type Gateway = 'esewa' | 'khalti'
@@ -551,6 +552,118 @@ export function parseServiceSelection(pkgKey: string): {
   return null
 }
 
+/**
+ * Format category breadcrumb as:
+ * [Main Category] → [Sub-Category] (→ [Side] if Wedding)
+ */
+export function formatServiceBreadcrumb(
+  mainCat: MainCategory | '',
+  indoorCat: IndoorCategory | '',
+  indoorTierId: string,
+  wSide: WeddingSide | '',
+  wEvent: string,
+  fallbackLabel?: string
+): string {
+  if (mainCat === 'indoor' && indoorCat) {
+    const cat = INDOOR_CATEGORY_OPTIONS.find((c) => c.id === indoorCat)
+    const tier = cat?.tiers.find((t) => t.id === indoorTierId) || cat?.tiers[0]
+    const tierSuffix =
+      tier && (cat?.tiers.length ?? 0) > 1
+        ? ` (${tier.name.split(' (')[0]})`
+        : ''
+    return `Indoor Photography → ${cat?.name || indoorCat}${tierSuffix}`
+  }
+
+  if (mainCat === 'wedding' && wSide) {
+    const sideLabel =
+      wSide === 'combo'
+        ? 'Combo (Both Sides)'
+        : wSide === 'bride'
+        ? 'Girl Side (Bride)'
+        : 'Boy Side (Groom)'
+    const eventLabel = wEvent || 'Ceremony'
+    return `Wedding Photography → ${sideLabel} → ${eventLabel}`
+  }
+
+  return fallbackLabel || 'Photography Session'
+}
+
+/**
+ * Generate pre-filled WhatsApp link for standard booking
+ */
+export function createBookingWhatsAppUrl(params: {
+  name: string
+  email: string
+  phone: string
+  service: string
+  date: string
+  details?: string
+  price?: string
+}): string {
+  const lines: string[] = [
+    '💍 *New Booking Request*',
+    '',
+    `Name: ${params.name}`,
+    `Email: ${params.email}`,
+    `Phone: ${params.phone}`,
+    `Service: ${params.service}`,
+    `Preferred Date: ${params.date}`,
+  ]
+
+  if (params.details && params.details.trim()) {
+    lines.push(`Additional Details: ${params.details.trim()}`)
+  } else {
+    lines.push('Additional Details: None provided')
+  }
+
+  if (params.price) {
+    lines.push(`Price: ${params.price}`)
+  }
+
+  lines.push('')
+  lines.push('_Sent from website booking form_')
+
+  const text = lines.join('\n')
+  return `https://wa.me/9779856010315?text=${encodeURIComponent(text)}`
+}
+
+/**
+ * Generate pre-filled WhatsApp link for advance booking payment
+ */
+export function createAdvanceBookingWhatsAppUrl(params: {
+  name: string
+  phone: string
+  service: string
+  advanceAmount: number
+  paymentMethod: string
+  refId?: string
+  totalPrice?: string
+}): string {
+  const lines: string[] = [
+    '✨ *Advance Booking Request*',
+    '',
+    `Name: ${params.name}`,
+    `Phone: ${params.phone}`,
+    `Service: ${params.service}`,
+    `Advance Amount: NPR ${params.advanceAmount.toLocaleString()}`,
+    `Payment Method: ${params.paymentMethod.toUpperCase()}`,
+  ]
+
+  if (params.refId) {
+    lines.push(`Payment Reference: ${params.refId}`)
+  }
+
+  if (params.totalPrice) {
+    lines.push(`Price / Package: ${params.totalPrice}`)
+  }
+
+  lines.push('')
+  lines.push('_Sent from website advance booking form_')
+
+  const text = lines.join('\n')
+  return `https://wa.me/9779856010315?text=${encodeURIComponent(text)}`
+}
+
 export function Booking() {
   const [activeTab, setActiveTab] = React.useState<TabMode>('booking')
   const [servicesList, setServicesList] = React.useState<ServiceInfo[]>(SERVICES)
@@ -580,7 +693,9 @@ export function Booking() {
     gateway: Gateway
     amount: number
     ref: string
+    waUrl?: string
   }>(null)
+  const [bookingSubmittedWaUrl, setBookingSubmittedWaUrl] = React.useState<string | null>(null)
   const [paymentForm, setPaymentForm] = React.useState({
     name: '',
     phone: '',
@@ -678,6 +793,34 @@ export function Booking() {
       .catch(() => {})
   }, [])
 
+  // Sync Name and Phone between forms if empty to save user effort
+  const handleTabChange = React.useCallback((tab: TabMode, broadcast = true) => {
+    if (tab === 'advance') {
+      setPaymentForm((prev) => ({
+        ...prev,
+        name: prev.name || bookingForm.name,
+        phone: prev.phone || bookingForm.phone,
+        packageKey: currentSelectionDetails?.packageKey || prev.packageKey,
+      }))
+    } else if (tab === 'booking') {
+      setBookingForm((prev) => ({
+        ...prev,
+        name: prev.name || paymentForm.name,
+        phone: prev.phone || paymentForm.phone,
+        service: currentSelectionDetails?.fullServiceLabel || prev.service,
+      }))
+    }
+    setActiveTab(tab)
+
+    if (broadcast && typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('booking-tab-change', { detail: tab })
+      )
+      const targetHash = tab === 'advance' ? '#advance-booking' : '#booking'
+      history.replaceState(null, '', targetHash)
+    }
+  }, [bookingForm.name, bookingForm.phone, currentSelectionDetails, paymentForm.name, paymentForm.phone])
+
   // Sync URL parameters, hash, and custom navigation events
   React.useEffect(() => {
     const syncFromUrl = () => {
@@ -737,35 +880,7 @@ export function Booking() {
       window.removeEventListener('booking-tab-change', handleExternalSwitch)
       window.removeEventListener('booking-select-package', handlePackageSelection)
     }
-  }, [applyPackageKey])
-
-  // Sync Name and Phone between forms if empty to save user effort
-  const handleTabChange = (tab: TabMode, broadcast = true) => {
-    if (tab === 'advance') {
-      setPaymentForm((prev) => ({
-        ...prev,
-        name: prev.name || bookingForm.name,
-        phone: prev.phone || bookingForm.phone,
-        packageKey: currentSelectionDetails?.packageKey || prev.packageKey,
-      }))
-    } else if (tab === 'booking') {
-      setBookingForm((prev) => ({
-        ...prev,
-        name: prev.name || paymentForm.name,
-        phone: prev.phone || paymentForm.phone,
-        service: currentSelectionDetails?.fullServiceLabel || prev.service,
-      }))
-    }
-    setActiveTab(tab)
-
-    if (broadcast && typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('booking-tab-change', { detail: tab })
-      )
-      const targetHash = tab === 'advance' ? '#advance-booking' : '#booking'
-      history.replaceState(null, '', targetHash)
-    }
-  }
+  }, [applyPackageKey, handleTabChange])
 
   const updateBooking = (k: keyof typeof bookingForm, v: string) =>
     setBookingForm((prev) => ({ ...prev, [k]: v }))
@@ -829,6 +944,16 @@ export function Booking() {
       return
     }
 
+    const serviceBreadcrumb = formatServiceBreadcrumb(
+      mainCategory,
+      indoorCategory,
+      indoorTier,
+      weddingSide,
+      weddingEvent,
+      currentSelectionDetails?.fullServiceLabel || bookingForm.service
+    )
+    const priceDisplay = currentSelectionDetails?.priceDisplay
+
     setBookingSubmitting(true)
     try {
       const resp = await fetch('/api/bookings', {
@@ -841,10 +966,35 @@ export function Booking() {
       })
       const data = await resp.json()
       if (resp.ok && data.success) {
-        toast.success('Booking received!', {
-          description:
-            "Thank you! We'll contact you within 24 hours to confirm your session.",
+        // Generate pre-filled WhatsApp message URL
+        const waUrl = createBookingWhatsAppUrl({
+          name: bookingForm.name,
+          email: bookingForm.email,
+          phone: bookingForm.phone,
+          service: serviceBreadcrumb,
+          date: bookingForm.date,
+          details: bookingForm.message,
+          price: priceDisplay,
         })
+
+        // Auto-open WhatsApp chat in new tab
+        if (typeof window !== 'undefined') {
+          window.open(waUrl, '_blank', 'noopener,noreferrer')
+        }
+
+        // Show inline banner in UI with one-tap action
+        setBookingSubmittedWaUrl(waUrl)
+
+        toast.success('Booking submitted!', {
+          description:
+            "We've prepared a WhatsApp message for you — please tap send to notify us instantly.",
+          duration: 9000,
+          action: {
+            label: 'Open WhatsApp',
+            onClick: () => window.open(waUrl, '_blank', 'noopener,noreferrer'),
+          },
+        })
+
         setBookingForm({
           name: '',
           email: '',
@@ -878,6 +1028,15 @@ export function Booking() {
       return
     }
 
+    const serviceBreadcrumb = formatServiceBreadcrumb(
+      mainCategory,
+      indoorCategory,
+      indoorTier,
+      weddingSide,
+      weddingEvent,
+      selectedPkg.label
+    )
+
     setPaymentSubmitting(true)
     try {
       const resp = await fetch(`/api/payment/${gateway}/initiate`, {
@@ -898,16 +1057,39 @@ export function Booking() {
         return
       }
 
+      // Generate pre-filled WhatsApp link for advance booking
+      const refId = data.transactionUuid || data.pidx || `ADV-${Date.now().toString().slice(-6)}`
+      const waUrl = createAdvanceBookingWhatsAppUrl({
+        name: paymentForm.name,
+        phone: paymentForm.phone,
+        service: serviceBreadcrumb,
+        advanceAmount: Number(data.amount || selectedPkg.amount),
+        paymentMethod: gateway,
+        refId,
+        totalPrice: selectedPkg.priceDisplay,
+      })
+
+      // Auto-open WhatsApp in a new tab
+      if (typeof window !== 'undefined') {
+        window.open(waUrl, '_blank', 'noopener,noreferrer')
+      }
+
       // DEMO MODE — no real gateway redirect
       if (data.demo) {
         await new Promise((r) => setTimeout(r, 600))
         setPaymentSuccess({
           gateway,
           amount: Number(data.amount),
-          ref: data.transactionUuid || data.pidx,
+          ref: refId,
+          waUrl,
         })
-        toast.success('Payment successful (demo mode)', {
-          description: `NPR ${Number(data.amount).toLocaleString()} • ${gateway.toUpperCase()} • ${data.transactionUuid || data.pidx}`,
+        toast.success('Advance booking recorded!', {
+          description: "We've prepared a WhatsApp message for you — please tap send to notify us instantly.",
+          duration: 9000,
+          action: {
+            label: 'Open WhatsApp',
+            onClick: () => window.open(waUrl, '_blank', 'noopener,noreferrer'),
+          },
         })
       } else if (data.payment_url) {
         window.location.href = data.payment_url
@@ -1032,10 +1214,50 @@ export function Booking() {
 
               {/* Tab 1: Standard Booking Form */}
               {activeTab === 'booking' && (
-                <form
-                  onSubmit={onBookingSubmit}
-                  className="space-y-4 animate-in fade-in-50 duration-200"
-                >
+                <div className="space-y-4 animate-in fade-in-50 duration-200">
+                  {bookingSubmittedWaUrl && (
+                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-foreground animate-in fade-in duration-300">
+                      <div className="flex items-start gap-3">
+                        <div className="h-9 w-9 rounded-full bg-[#25D366]/20 text-[#25D366] flex items-center justify-center shrink-0 mt-0.5">
+                          <WhatsAppIcon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                            <span>Booking Request Submitted!</span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#25D366]/20 text-[#25D366] font-semibold">
+                              WhatsApp Ready
+                            </span>
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            We&apos;ve prepared a WhatsApp message with all your submitted details. If WhatsApp did not open automatically, tap below to notify our studio with one click:
+                          </p>
+                          <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                            <a
+                              href={bookingSubmittedWaUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold text-xs shadow-md transition-all active:scale-95"
+                            >
+                              <WhatsAppIcon className="h-4 w-4" />
+                              <span>Send Details on WhatsApp</span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => setBookingSubmittedWaUrl(null)}
+                              className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 underline underline-offset-4"
+                            >
+                              Dismiss
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <form
+                    onSubmit={onBookingSubmit}
+                    className="space-y-4"
+                  >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div className="space-y-1">
                       <Label htmlFor="booking-name" className="text-xs font-medium text-foreground/80">
@@ -1159,18 +1381,20 @@ export function Booking() {
                     )}
                   </Button>
                 </form>
-              )}
+              </div>
+            )}
 
-              {/* Tab 2: Advance Booking (Payment) */}
-              {activeTab === 'advance' && (
-                <div className="animate-in fade-in-50 duration-200">
-                  {paymentSuccess ? (
-                    <SuccessCard
-                      gateway={paymentSuccess.gateway}
-                      amount={paymentSuccess.amount}
-                      refId={paymentSuccess.ref}
-                      onReset={() => setPaymentSuccess(null)}
-                    />
+            {/* Tab 2: Advance Booking (Payment) */}
+            {activeTab === 'advance' && (
+              <div className="animate-in fade-in-50 duration-200">
+                {paymentSuccess ? (
+                  <SuccessCard
+                    gateway={paymentSuccess.gateway}
+                    amount={paymentSuccess.amount}
+                    refId={paymentSuccess.ref}
+                    waUrl={paymentSuccess.waUrl}
+                    onReset={() => setPaymentSuccess(null)}
+                  />
                   ) : (
                     <form onSubmit={onPaymentSubmit} className="space-y-4">
                       {/* Wallet Gateway Selector */}
@@ -1640,11 +1864,13 @@ function SuccessCard({
   gateway,
   amount,
   refId,
+  waUrl,
   onReset,
 }: {
   gateway: Gateway
   amount: number
   refId: string
+  waUrl?: string
   onReset: () => void
 }) {
   return (
@@ -1653,10 +1879,27 @@ function SuccessCard({
         <CheckCircle2 className="h-8 w-8" />
       </div>
       <h3 className="font-serif text-2xl font-bold mb-2 text-foreground">Payment Successful</h3>
-      <p className="text-muted-foreground text-sm mb-6">
-        Your advance booking payment has been received. We&apos;ll contact you shortly
-        to finalize your session.
+      <p className="text-muted-foreground text-sm mb-5 max-w-md mx-auto">
+        Your advance booking payment has been received. We&apos;ve prepared your WhatsApp confirmation message — please tap send to notify us immediately.
       </p>
+
+      {waUrl && (
+        <div className="mb-6 max-w-sm mx-auto">
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2.5 w-full py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold text-xs shadow-lg shadow-[#25D366]/20 transition-all hover:scale-[1.02] active:scale-95"
+          >
+            <WhatsAppIcon className="h-4 w-4" />
+            <span>Send Confirmation on WhatsApp</span>
+          </a>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Tap to open WhatsApp with pre-filled payment details
+          </p>
+        </div>
+      )}
+
       <div className="bg-secondary/60 border border-border rounded-lg p-4 mb-6 text-left text-sm space-y-2 max-w-sm mx-auto">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Gateway</span>

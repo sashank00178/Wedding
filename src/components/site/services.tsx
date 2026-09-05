@@ -41,13 +41,13 @@ function ServiceCard({ service }: { service: ServiceInfo }) {
     >
       <div>
         {/* Real photography image */}
-        <div className="relative aspect-[16/10] w-full rounded-lg overflow-hidden mb-5 bg-secondary border border-border/60">
+        <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full rounded-lg overflow-hidden mb-5 bg-secondary border border-border/60">
           <Image
             src={imageSrc}
             alt={service.title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            quality={75}
+            quality={80}
             className={cn(
               "object-cover group-hover:scale-105 transition-transform duration-500",
               isIndoor ? "object-[center_30%]" : "object-[center_35%]"

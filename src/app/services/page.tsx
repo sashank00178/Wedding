@@ -151,13 +151,13 @@ export default function ServicesPage() {
                     )}>
                       {/* Image Preview */}
                       <div className={cn('lg:col-span-5 relative', !isEven && 'lg:col-start-8')}>
-                        <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-secondary border border-border shadow-sm">
+                        <div className="relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] w-full rounded-xl overflow-hidden bg-secondary border border-border shadow-sm">
                           <Image
                             src={service.key === 'portrait' ? '/gallery/indoor/IMG_7952.JPG' : (service.image || '/gallery/wedding-photography.jpg')}
                             alt={service.title}
                             fill
-                            sizes="(max-width: 1024px) 100vw, 40vw"
-                            quality={75}
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 40vw"
+                            quality={80}
                             className={cn(
                               "object-cover",
                               service.key === 'portrait' ? "object-[center_30%]" : "object-[center_35%]"

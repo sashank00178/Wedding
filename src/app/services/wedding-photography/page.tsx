@@ -312,15 +312,15 @@ export default function WeddingPhotographyPage() {
         <section className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16">
           <div className="relative rounded-2xl overflow-hidden border border-border/80 bg-card shadow-2xl">
             {/* Background Image with Dark Vignette */}
-            <div className="relative h-[300px] sm:h-[400px] lg:h-[460px] w-full">
+            <div className="relative h-[280px] sm:h-[400px] lg:h-[460px] w-full">
               <Image
                 src="/gallery/wedding-photography.jpg"
                 alt="Wedding Photography Ceremony Nepal"
                 fill
                 priority
-                sizes="(max-width: 1280px) 100vw, 1280px"
-                quality={75}
-                className="object-cover object-[center_30%]"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1280px"
+                quality={85}
+                className="object-cover object-[center_35%]"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
