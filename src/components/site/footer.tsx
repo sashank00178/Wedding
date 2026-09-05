@@ -3,10 +3,13 @@
 import * as React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname, useRouter } from 'next/navigation'
 import { SITE, NAV_LINKS, SERVICES, STUDIO_HOURS } from '@/lib/site'
 import { SocialLinks } from '@/components/site/social-links'
 
 export function Footer() {
+  const pathname = usePathname()
+  const router = useRouter()
   const [site, setSite] = React.useState(SITE)
   const [servicesList, setServicesList] = React.useState(SERVICES)
   const [hoursList, setHoursList] = React.useState<{ day: string; time: string }[]>(STUDIO_HOURS)
@@ -23,11 +26,21 @@ export function Footer() {
   }, [])
 
   const handleNavClick = (e: React.MouseEvent, href: string) => {
+    if (href.startsWith('/') && !href.includes('#')) {
+      return
+    }
+
     e.preventDefault()
-    const el = document.querySelector(href)
-    if (el) {
-      const top = el.getBoundingClientRect().top + window.scrollY - 70
-      window.scrollTo({ top, behavior: 'smooth' })
+    const targetHash = href.includes('#') ? '#' + href.split('#')[1] : href
+    if (pathname === '/') {
+      const el = document.querySelector(targetHash)
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.scrollY - 70
+        window.scrollTo({ top, behavior: 'smooth' })
+        history.replaceState(null, '', targetHash)
+      }
+    } else {
+      router.push(`/${targetHash}`)
     }
   }
 
@@ -38,8 +51,12 @@ export function Footer() {
           {/* Brand */}
           <div>
             <Link
-              href="#home"
-              onClick={(e) => handleNavClick(e, '#home')}
+              href="/"
+              onClick={(e) => {
+                if (pathname === '/') {
+                  handleNavClick(e, '#home')
+                }
+              }}
               className="flex items-center gap-3 mb-4 group"
             >
               <div className="relative h-10 w-10 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -70,13 +87,13 @@ export function Footer() {
             <ul className="space-y-3 mt-4">
               {NAV_LINKS.map((link) => (
                 <li key={link.href}>
-                  <a
+                  <Link
                     href={link.href}
                     onClick={(e) => handleNavClick(e, link.href)}
                     className="text-sm text-muted-foreground hover:text-gold transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -91,13 +108,12 @@ export function Footer() {
             <ul className="space-y-3 mt-4">
               {servicesList.map((s) => (
                 <li key={s.key}>
-                  <a
-                    href="#services"
-                    onClick={(e) => handleNavClick(e, '#services')}
+                  <Link
+                    href={`/services#${s.key}`}
                     className="text-sm text-muted-foreground hover:text-gold transition-colors"
                   >
                     {s.title}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

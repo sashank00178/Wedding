@@ -1,6 +1,45 @@
 import type { NextConfig } from "next";
+import os from "os";
+
+// Dynamically discover all active local IPv4 addresses so any Wi-Fi IP and tunnels are allowed
+function getDevAllowedOrigins(): string[] {
+  const origins = [
+    "localhost",
+    "localhost:3000",
+    "127.0.0.1",
+    "127.0.0.1:3000",
+    "*.ngrok-free.app",
+    "*.ngrok.io",
+    "*.ngrok.app",
+    "*.loca.lt",
+    "*.trycloudflare.com",
+    "*.local",
+  ];
+
+  try {
+    const interfaces = os.networkInterfaces();
+    for (const addrs of Object.values(interfaces)) {
+      if (!addrs) continue;
+      for (const addr of addrs) {
+        if (addr.family === "IPv4") {
+          origins.push(addr.address);
+          origins.push(`${addr.address}:3000`);
+          origins.push(`${addr.address}:80`);
+          origins.push(`${addr.address}:81`);
+        }
+      }
+    }
+  } catch {}
+
+  return Array.from(new Set(origins));
+}
+
+const devOrigins = getDevAllowedOrigins();
 
 const nextConfig: NextConfig = {
+  // Allow Turbopack dev server and HMR WebSockets from local network IPs and tunnels
+  allowedDevOrigins: devOrigins,
+
   output: "standalone",
   typescript: {
     ignoreBuildErrors: true,
@@ -20,7 +59,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "X-Frame-Options",
-            value: "DENY",
+            value: "SAMEORIGIN",
           },
           {
             key: "X-Content-Type-Options",
@@ -39,13 +78,8 @@ const nextConfig: NextConfig = {
             key: "X-XSS-Protection",
             value: "1; mode=block",
           },
-          // Cache control — no caching for API routes
-          {
-            key: "Cache-Control",
-            value: "no-store, max-age=0, must-revalidate",
-          },
           // HSTS — enforce HTTPS in production (1 year, include subdomains)
-          // Only enable in production — localhost doesn't have HTTPS
+          // Only enable in production — localhost and LAN IPs don't have HTTPS
           {
             key: "Strict-Transport-Security",
             value:
@@ -72,12 +106,11 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // ── Body Size Limits ─────────────────────────────────────────────
-  // Prevent oversized payloads from crashing the server.
-  // Default is 1MB per Next.js, but we set explicit limits per route.
+  // ── Body Size Limits & Server Actions ─────────────────────────────
   experimental: {
     serverActions: {
       bodySizeLimit: "2mb",
+      allowedOrigins: devOrigins,
     },
   },
 

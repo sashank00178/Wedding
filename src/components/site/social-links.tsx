@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { SITE } from '@/lib/site'
+import { WhatsAppIcon, getWhatsAppUrl } from '@/components/site/whatsapp-button'
 
 /**
  * Official Brand SVG Icons
@@ -68,18 +69,18 @@ export interface SocialLinksProps {
   facebookHref?: string
   instagramHref?: string
   tiktokHref?: string
+  whatsappHref?: string
 }
 
 export function SocialLinks({
   className,
   buttonClassName,
   phoneHref,
-  facebookHref = 'https://facebook.com',
-  instagramHref = 'https://instagram.com',
-  tiktokHref = 'https://tiktok.com',
+  facebookHref = 'https://www.facebook.com/share/19FMkBiqgK/',
+  instagramHref = 'https://www.instagram.com/weddingmoment_uncalmax1?igsi=MTVzcHZxb3B1enlteA==',
+  tiktokHref = 'https://www.tiktok.com/@uncalmax?_r=1&_t=ZS-99QPIkiKqzV',
+  whatsappHref = getWhatsAppUrl(),
 }: SocialLinksProps) {
-  const callHref = phoneHref || `tel:${SITE.phone.replace(/\s/g, '')}`
-
   return (
     <div className={cn('flex items-center gap-3', className)}>
       {/* Facebook */}
@@ -127,17 +128,19 @@ export function SocialLinks({
         <TikTokIcon className="h-4 w-4" />
       </a>
 
-      {/* Phone / Direct Call */}
+      {/* WhatsApp */}
       <a
-        href={callHref}
-        aria-label={`Call our studio directly at ${SITE.phone}`}
-        title={`Call Wedding Moment Studio (${SITE.phone})`}
+        href={whatsappHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Chat with Wedding Moment on WhatsApp"
+        title="Chat with Wedding Moment on WhatsApp"
         className={cn(
-          'social-btn social-btn-phone relative h-9.5 w-9.5 rounded-full bg-secondary text-foreground/80 border border-border flex items-center justify-center focus-visible:ring-2 focus-visible:ring-gold/60',
+          'social-btn social-btn-whatsapp relative h-9.5 w-9.5 rounded-full bg-secondary text-foreground/80 border border-border flex items-center justify-center focus-visible:ring-2 focus-visible:ring-gold/60',
           buttonClassName
         )}
       >
-        <PhoneIcon className="h-4 w-4" />
+        <WhatsAppIcon className="h-4 w-4" />
       </a>
     </div>
   )

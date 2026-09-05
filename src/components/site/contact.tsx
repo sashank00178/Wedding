@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { Loader2, ExternalLink } from 'lucide-react'
 import { SITE } from '@/lib/site'
 import { SocialLinks } from '@/components/site/social-links'
+import { WhatsAppButton } from '@/components/site/whatsapp-button'
 
 export function Contact() {
   const [site, setSite] = React.useState(SITE)
@@ -62,6 +63,28 @@ export function Contact() {
     }
   }
 
+  const emailSubject = encodeURIComponent(`Photography Inquiry - ${site.brand}`)
+  const emailBody = encodeURIComponent(
+    `Hi ${site.shortBrand} Team,\n\nI would like to inquire about your photography sessions and availability.\n\n`
+  )
+  const mailtoUrl = `mailto:${site.email}?subject=${emailSubject}&body=${emailBody}`
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+    site.email
+  )}&su=${emailSubject}&body=${emailBody}`
+
+  const handleEmailClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // If on desktop where mailto is frequently unregistered in Windows/browsers,
+    // open Gmail Web Compose in a new tab so the customer can directly write their message.
+    const isMobile =
+      typeof navigator !== 'undefined' &&
+      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
+    if (!isMobile) {
+      e.preventDefault()
+      window.open(gmailUrl, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
     <Section id="contact" className="py-20 sm:py-28 bg-background">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -71,8 +94,8 @@ export function Contact() {
           subtitle="We welcome you to our professional photography studio in Pokhara, Nepal."
         />
 
-        {/* Two Balanced, Symmetrically Sized Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch w-full">
+        {/* Two Balanced, Symmetrically Sized Cards with compact gap */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-stretch w-full max-w-5xl mx-auto">
           {/* Left Card: Studio Location & Clean Map */}
           <div className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
             {/* Unified Location Header */}
@@ -150,7 +173,7 @@ export function Contact() {
                     placeholder="name@example.com"
                     value={form.email}
                     onChange={(e) => update('email', e.target.value)}
-                    className="h-9 bg-background border-border text-xs focus-visible:ring-gold/50"
+                    className="h-9 max-w-xs bg-background border-border text-xs focus-visible:ring-gold/50"
                     required
                   />
                 </div>
@@ -165,12 +188,12 @@ export function Contact() {
                     placeholder="Tell us about your upcoming event, preferred dates, or questions..."
                     value={form.message}
                     onChange={(e) => update('message', e.target.value)}
-                    className="bg-background border-border text-xs resize-none focus-visible:ring-gold/50"
+                    className="max-w-xs bg-background border-border text-xs resize-none focus-visible:ring-gold/50"
                     required
                   />
                 </div>
 
-                <div className="pt-0.5 flex justify-end">
+                <div className="pt-0.5 flex justify-end w-full">
                   <Button
                     type="submit"
                     disabled={submitting}
@@ -192,7 +215,7 @@ export function Contact() {
 
             {/* Connected Footer Block: Direct Contacts & Socials */}
             <div className="border-t border-border/70 pt-3.5 mt-4 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                 <div>
                   <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
                     Call Studio
@@ -207,10 +230,19 @@ export function Contact() {
 
                 <div>
                   <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
+                    WhatsApp Chat
+                  </span>
+                  <WhatsAppButton variant="subtle" label="Chat with Admin" />
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
                     Email Studio
                   </span>
                   <a
-                    href={`mailto:${site.email}`}
+                    href={mailtoUrl}
+                    onClick={handleEmailClick}
+                    title={`Send an email to ${site.email}`}
                     className="font-semibold text-foreground hover:text-gold transition-colors text-xs truncate block"
                   >
                     {site.email}

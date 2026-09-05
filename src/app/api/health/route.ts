@@ -28,7 +28,7 @@ export async function GET() {
   // ── 1. Database check ─────────────────────────────────────────
   try {
     const dbStart = Date.now()
-    await db.$queryRaw('SELECT 1')
+    await db.$queryRaw`SELECT 1`
     checks.database = {
       status: 'ok',
       latencyMs: Date.now() - dbStart,

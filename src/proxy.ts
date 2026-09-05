@@ -38,13 +38,9 @@ const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || '').split(',').filter(Boole
 
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false
-  // Allow in development
+  // In development, allow localhost, all local network IPs, and all tunnels (ngrok, localtunnel, cloudflare, etc.)
   if (process.env.NODE_ENV !== 'production') {
-    return (
-      origin.startsWith('http://localhost') ||
-      origin.startsWith('http://127.0.0.1') ||
-      origin.startsWith('http://192.168.')
-    )
+    return true
   }
   return ALLOWED_ORIGINS.includes(origin)
 }
@@ -57,7 +53,7 @@ function getCorsHeaders(request: NextRequest): HeadersInit {
     headers['Access-Control-Allow-Origin'] = origin!
     headers['Access-Control-Allow-Credentials'] = 'true'
     headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
-    headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Guest-Session-Id'
+    headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Guest-Session-Id, ngrok-skip-browser-warning, Accept, Origin, X-Requested-With'
     headers['Access-Control-Max-Age'] = '86400' // 24 hours preflight cache
   }
 

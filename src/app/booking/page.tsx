@@ -10,6 +10,7 @@ import { Footer } from '@/components/site/footer'
 function BookingContent() {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
+  const packageParam = searchParams.get('package')
 
   React.useEffect(() => {
     if (tabParam === 'advance') {
@@ -21,7 +22,18 @@ function BookingContent() {
         new CustomEvent('booking-tab-change', { detail: 'booking' })
       )
     }
-  }, [tabParam])
+
+    if (packageParam) {
+      window.dispatchEvent(
+        new CustomEvent('booking-select-package', {
+          detail: {
+            packageKey: packageParam,
+            tab: tabParam === 'advance' ? 'advance' : 'booking',
+          },
+        })
+      )
+    }
+  }, [tabParam, packageParam])
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

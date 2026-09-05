@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   try {
     await requireAdmin()
     const body = await req.json()
-    const { src, title, category, description } = body
+    const { src, title, category, subcategory, description } = body
 
     if (!src || !title || !category) {
       return NextResponse.json(
@@ -38,6 +38,7 @@ export async function POST(req: Request) {
         src,
         title,
         category,
+        subcategory: subcategory || null,
         description: description || '',
         order: count,
       },
@@ -57,7 +58,7 @@ export async function PUT(req: Request) {
   try {
     await requireAdmin()
     const body = await req.json()
-    const { id, src, title, category, description, order } = body
+    const { id, src, title, category, subcategory, description, order } = body
 
     if (!id) {
       return NextResponse.json({ error: 'Photo ID is required' }, { status: 400 })
@@ -69,6 +70,7 @@ export async function PUT(req: Request) {
         ...(src && { src }),
         ...(title && { title }),
         ...(category && { category }),
+        ...(subcategory !== undefined && { subcategory }),
         ...(description !== undefined && { description }),
         ...(order !== undefined && { order }),
       },

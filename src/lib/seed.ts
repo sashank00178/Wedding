@@ -63,8 +63,6 @@ async function main() {
   const categories = [
     { name: 'Portrait', slug: 'portrait', description: 'Individual, family, and group portrait sessions' },
     { name: 'Wedding', slug: 'wedding', description: 'Complete wedding day photography coverage' },
-    { name: 'Commercial', slug: 'commercial', description: 'Business, product, and marketing photography' },
-    { name: 'Event', slug: 'event', description: 'Corporate events, parties, and special occasions' },
   ]
 
   for (const cat of categories) {
@@ -81,8 +79,6 @@ async function main() {
   const catMap = {
     portrait: 'portrait',
     wedding: 'wedding',
-    commercial: 'commercial',
-    event: 'event',
   } as const
 
   const products = [
@@ -103,24 +99,6 @@ async function main() {
       categoryName: 'wedding',
       variantName: 'Premium Coverage',
       sku: 'WEDDING-PRM',
-    },
-    {
-      name: 'Commercial Photography Package',
-      slug: 'commercial-photography-package',
-      description: 'Professional commercial photography for your business. Includes 3-hour studio session, product styling, 30 edited images with commercial license.',
-      basePrice: 4999,
-      categoryName: 'commercial',
-      variantName: 'Business Package',
-      sku: 'COMMERCIAL-BIZ',
-    },
-    {
-      name: 'Event Photography Package',
-      slug: 'event-photography-package',
-      description: 'Professional event coverage for corporate events, parties, and special occasions. Includes 4-hour coverage, 150+ edited photos, same-day highlights.',
-      basePrice: 6499,
-      categoryName: 'event',
-      variantName: 'Standard Event',
-      sku: 'EVENT-STD',
     },
   ]
 

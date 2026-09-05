@@ -15,6 +15,7 @@ import {
   CreditCard,
   Clock,
   Settings,
+  Wifi,
   LogOut,
   Plus,
   Trash2,
@@ -68,21 +69,34 @@ import {
 } from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { NetworkAccessCard } from '@/components/site/network-access-card'
+import { GALLERY_CATEGORY_LABELS, GALLERY_SUBCATEGORY_LABELS } from '@/lib/site'
 
 type TabType =
   | 'overview'
   | 'gallery'
   | 'services'
   | 'bookings'
+  | 'messages'
   | 'payments'
   | 'contact-hours'
   | 'site-content'
+
+interface ContactMessageItem {
+  id: string
+  name: string
+  email: string
+  subject: string
+  message: string
+  createdAt: string
+}
 
 interface GalleryPhotoItem {
   id: string
   src: string
   title: string
   category: string
+  subcategory?: string | null
   description?: string | null
   order: number
 }
@@ -155,6 +169,7 @@ export default function AdminDashboardPage() {
   const [services, setServices] = React.useState<ServiceItem[]>([])
   const [bookings, setBookings] = React.useState<BookingItem[]>([])
   const [payments, setPayments] = React.useState<PaymentItem[]>([])
+  const [messages, setMessages] = React.useState<ContactMessageItem[]>([])
   const [siteSettings, setSiteSettings] = React.useState<Record<string, string>>({})
   const [studioHours, setStudioHours] = React.useState<StudioHourItem[]>([])
   const [socialLinks, setSocialLinks] = React.useState<SocialLinkItem[]>([])
@@ -165,6 +180,7 @@ export default function AdminDashboardPage() {
   const [photoForm, setPhotoForm] = React.useState({
     title: '',
     category: 'wedding',
+    subcategory: '',
     description: '',
     src: '',
   })
@@ -191,7 +207,7 @@ export default function AdminDashboardPage() {
   // Delete confirmation
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false)
   const [deleteAction, setDeleteAction] = React.useState<{
-    type: 'gallery' | 'service' | 'booking' | 'payment'
+    type: 'gallery' | 'service' | 'booking' | 'payment' | 'message'
     id: string
     title: string
   } | null>(null)
@@ -201,6 +217,7 @@ export default function AdminDashboardPage() {
   const [bookingFilter, setBookingFilter] = React.useState('all')
   const [bookingSearch, setBookingSearch] = React.useState('')
   const [paymentFilter, setPaymentFilter] = React.useState('all')
+  const [messageSearch, setMessageSearch] = React.useState('')
 
   React.useEffect(() => {
     setMounted(true)
@@ -247,18 +264,20 @@ export default function AdminDashboardPage() {
   const loadAllData = React.useCallback(async () => {
     setLoadingData(true)
     try {
-      const [gRes, sRes, bRes, pRes, setRes] = await Promise.all([
+      const [gRes, sRes, bRes, pRes, setRes, mRes] = await Promise.all([
         authFetch('/api/admin/gallery'),
         authFetch('/api/admin/services'),
         authFetch('/api/admin/bookings'),
         authFetch('/api/admin/payments'),
         authFetch('/api/admin/settings'),
+        authFetch('/api/admin/messages'),
       ])
 
       if (gRes.ok) setGallery(await gRes.json())
       if (sRes.ok) setServices(await sRes.json())
       if (bRes.ok) setBookings(await bRes.json())
       if (pRes.ok) setPayments(await pRes.json())
+      if (mRes.ok) setMessages(await mRes.json())
       if (setRes.ok) {
         const data = await setRes.json()
         setSiteSettings(data.settings || {})
@@ -337,7 +356,7 @@ export default function AdminDashboardPage() {
               label: 'Clear Draft',
               onClick: () => {
                 localStorage.removeItem(DRAFT_STORAGE_KEY)
-                setPhotoForm({ title: '', category: 'wedding', description: '', src: '' })
+                setPhotoForm({ title: '', category: 'wedding', subcategory: '', description: '', src: '' })
               },
             },
           })
@@ -350,6 +369,7 @@ export default function AdminDashboardPage() {
     setPhotoForm({
       title: '',
       category: 'wedding',
+      subcategory: '',
       description: '',
       src: '',
     })
@@ -361,6 +381,7 @@ export default function AdminDashboardPage() {
     setPhotoForm({
       title: photo.title,
       category: photo.category,
+      subcategory: photo.subcategory || '',
       description: photo.description || '',
       src: photo.src,
     })
@@ -605,6 +626,14 @@ export default function AdminDashboardPage() {
           setPayments((prev) => prev.filter((p) => p.id !== deleteAction.id))
           toast.success('Payment record deleted')
         }
+      } else if (deleteAction.type === 'message') {
+        const res = await authFetch(`/api/admin/messages?id=${deleteAction.id}`, {
+          method: 'DELETE',
+        })
+        if (res.ok) {
+          setMessages((prev) => prev.filter((m) => m.id !== deleteAction.id))
+          toast.success('Message deleted')
+        }
       }
     } catch {
       toast.error('Failed to delete item')
@@ -675,6 +704,17 @@ export default function AdminDashboardPage() {
   const filteredPayments = payments.filter((p) =>
     paymentFilter === 'all' ? true : p.gateway === paymentFilter || p.status === paymentFilter
   )
+
+  const filteredMessages = messages.filter((m) => {
+    if (!messageSearch) return true
+    const q = messageSearch.toLowerCase()
+    return (
+      m.name.toLowerCase().includes(q) ||
+      m.email.toLowerCase().includes(q) ||
+      m.subject.toLowerCase().includes(q) ||
+      m.message.toLowerCase().includes(q)
+    )
+  })
 
   // Quick stats
   const pendingBookingsCount = bookings.filter((b) => b.status === 'pending').length
@@ -775,6 +815,33 @@ export default function AdminDashboardPage() {
               {pendingBookingsCount > 0 && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 font-bold">
                   {pendingBookingsCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('messages')}
+              className={cn(
+                'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left',
+                activeTab === 'messages'
+                  ? 'bg-gold text-black font-semibold shadow-sm'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 shrink-0" />
+                Direct Messages
+              </div>
+              {messages.length > 0 && (
+                <span
+                  className={cn(
+                    'text-xs px-2 py-0.5 rounded-full font-bold',
+                    activeTab === 'messages'
+                      ? 'bg-black text-gold'
+                      : 'bg-gold/20 text-gold'
+                  )}
+                >
+                  {messages.length}
                 </span>
               )}
             </button>
@@ -912,6 +979,7 @@ export default function AdminDashboardPage() {
               { id: 'gallery', label: 'Gallery', icon: Images },
               { id: 'services', label: 'Services', icon: Layers },
               { id: 'bookings', label: 'Bookings', icon: CalendarCheck },
+              { id: 'messages', label: `Messages (${messages.length})`, icon: Mail },
               { id: 'payments', label: 'Payments', icon: CreditCard },
               { id: 'contact-hours', label: 'Hours & Contact', icon: Clock },
               { id: 'site-content', label: 'Site Content', icon: Settings },
@@ -987,6 +1055,18 @@ export default function AdminDashboardPage() {
             <Button
               size="sm"
               variant="outline"
+              asChild
+              className="h-9 gap-1.5 text-xs border-border bg-card hover:border-gold/50"
+            >
+              <Link href="/network" target="_blank" title="View Local Wi-Fi Access details">
+                <Wifi className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="hidden sm:inline">Wi-Fi Access</span>
+              </Link>
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
               onClick={loadAllData}
               disabled={loadingData}
               className="h-9 gap-1.5 text-xs border-border"
@@ -1012,7 +1092,7 @@ export default function AdminDashboardPage() {
               {activeTab === 'overview' && (
                 <div className="space-y-8 animate-in fade-in-50">
                   {/* Stats Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
@@ -1028,17 +1108,35 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
 
+                    <div
+                      onClick={() => setActiveTab('messages')}
+                      className="bg-card border border-border rounded-2xl p-5 shadow-sm cursor-pointer hover:border-gold/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
+                          Direct Notes
+                        </span>
+                        <div className="h-8 w-8 rounded-full bg-gold/10 text-gold flex items-center justify-center">
+                          <Mail className="h-4 w-4" />
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold font-serif">{messages.length}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        From contact form
+                      </p>
+                    </div>
+
                     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                           Paid Revenue
                         </span>
-                        <div className="h-8 w-8 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center">
-                          <DollarSign className="h-4 w-4" />
+                        <div className="h-8 w-8 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center font-bold text-xs tracking-tight">
+                          Rs
                         </div>
                       </div>
                       <p className="text-3xl font-bold font-serif">
-                        रु {totalRevenue.toLocaleString()}
+                        Rs. {totalRevenue.toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {payments.length} total transaction logs
@@ -1172,6 +1270,11 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Network Access Card */}
+                  <div className="pt-2">
+                    <NetworkAccessCard />
+                  </div>
                 </div>
               )}
 
@@ -1183,18 +1286,22 @@ export default function AdminDashboardPage() {
                   {/* Top toolbar */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-1.5 bg-card border border-border p-1 rounded-xl">
-                      {['all', 'wedding', 'portrait', 'commercial', 'event'].map((cat) => (
+                      {[
+                        { key: 'all', label: 'All' },
+                        { key: 'wedding', label: 'Wedding Photo Shoots' },
+                        { key: 'portrait', label: 'Indoor Photo Shoots' },
+                      ].map((cat) => (
                         <button
-                          key={cat}
-                          onClick={() => setGalleryFilter(cat)}
+                          key={cat.key}
+                          onClick={() => setGalleryFilter(cat.key)}
                           className={cn(
-                            'px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors',
-                            galleryFilter === cat
+                            'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                            galleryFilter === cat.key
                               ? 'bg-gold text-black font-bold'
                               : 'text-muted-foreground hover:text-foreground'
                           )}
                         >
-                          {cat}
+                          {cat.label}
                         </button>
                       ))}
                     </div>
@@ -1232,10 +1339,15 @@ export default function AdminDashboardPage() {
                               unoptimized
                               className="object-cover group-hover:scale-105 transition-transform duration-500"
                             />
-                            <div className="absolute top-2 left-2">
+                            <div className="absolute top-2 left-2 flex flex-wrap gap-1">
                               <span className="px-2 py-0.5 rounded-md bg-black/70 text-gold text-[10px] uppercase font-bold tracking-wider backdrop-blur-sm">
-                                {photo.category}
+                                {GALLERY_CATEGORY_LABELS[photo.category] || photo.category}
                               </span>
+                              {photo.subcategory && (
+                                <span className="px-2 py-0.5 rounded-md bg-gold text-black text-[10px] uppercase font-bold tracking-wider shadow-sm">
+                                  {GALLERY_SUBCATEGORY_LABELS[photo.subcategory] || photo.subcategory}
+                                </span>
+                              )}
                             </div>
                           </div>
 
@@ -1579,7 +1691,7 @@ export default function AdminDashboardPage() {
                                   {p.packageName}
                                 </td>
                                 <td className="py-3.5 px-4 font-bold text-gold text-sm">
-                                  रु {p.amount.toLocaleString()}
+                                  Rs. {p.amount.toLocaleString()}
                                 </td>
                                 <td className="py-3.5 px-4 font-mono text-[11px] text-muted-foreground">
                                   {p.transactionUuid}
@@ -1629,6 +1741,139 @@ export default function AdminDashboardPage() {
                             ))}
                           </tbody>
                         </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================
+                  TAB: DIRECT CONTACT INQUIRIES / MESSAGES
+                 ======================================================== */}
+              {activeTab === 'messages' && (
+                <div className="space-y-6 animate-in fade-in-50">
+                  <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                      <div>
+                        <div className="flex items-center gap-2.5">
+                          <h2 className="font-serif text-xl font-bold">Direct Contact Messages</h2>
+                          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gold/20 text-gold">
+                            {messages.length} total
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Inquiries submitted by customers via the &quot;Send a Direct Note&quot; website contact form.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="relative w-full sm:w-72">
+                          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            placeholder="Search by name, email, or message..."
+                            value={messageSearch}
+                            onChange={(e) => setMessageSearch(e.target.value)}
+                            className="pl-9 h-9 text-xs bg-background border-border"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {filteredMessages.length === 0 ? (
+                      <div className="text-center py-16 border border-dashed border-border rounded-xl">
+                        <Mail className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                        <p className="text-sm font-semibold text-foreground">No messages found</p>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                          {messages.length === 0
+                            ? 'When customers submit a direct note from the website, their message will appear here safely.'
+                            : 'No messages match your current search term.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredMessages.map((m) => (
+                          <div
+                            key={m.id}
+                            className="bg-secondary/30 hover:bg-secondary/50 border border-border/80 rounded-xl p-5 transition-all space-y-3"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-gold/15 border border-gold/30 text-gold font-bold flex items-center justify-center text-sm shrink-0">
+                                  {m.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="font-semibold text-sm text-foreground">{m.name}</h3>
+                                    <span className="text-[10px] px-2 py-0.5 rounded bg-secondary text-muted-foreground border border-border">
+                                      {m.subject}
+                                    </span>
+                                  </div>
+                                  <a
+                                    href={`mailto:${m.email}`}
+                                    className="text-xs text-gold hover:underline"
+                                  >
+                                    {m.email}
+                                  </a>
+                                </div>
+                              </div>
+
+                              <span className="text-[11px] text-muted-foreground self-start sm:self-center">
+                                {new Date(m.createdAt).toLocaleString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+
+                            <div className="bg-background/80 border border-border/60 rounded-lg p-4 text-xs sm:text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                              {m.message}
+                            </div>
+
+                            <div className="flex items-center justify-between pt-1">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  asChild
+                                  className="h-8 text-xs gap-1.5 border-gold/40 text-gold hover:bg-gold/10"
+                                >
+                                  <a
+                                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                                      m.email
+                                    )}&su=${encodeURIComponent('Re: ' + m.subject)}&body=${encodeURIComponent(
+                                      `Hi ${m.name},\n\nThank you for reaching out to Wedding Moment Nepal!\n\n`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Mail className="h-3.5 w-3.5" />
+                                    Reply via Email
+                                  </a>
+                                </Button>
+                              </div>
+
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setDeleteAction({
+                                    type: 'message',
+                                    id: m.id,
+                                    title: `Message from ${m.name}`,
+                                  })
+                                  setDeleteConfirmOpen(true)
+                                }}
+                                className="h-8 text-xs text-destructive hover:bg-destructive/10 gap-1"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -1874,8 +2119,8 @@ export default function AdminDashboardPage() {
           MODAL: ADD / EDIT GALLERY PHOTO
          ======================================================== */}
       <Dialog open={galleryModalOpen} onOpenChange={setGalleryModalOpen}>
-        <DialogContent className="sm:max-w-lg bg-card border-border">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90dvh] overflow-y-auto p-6 pt-7 sm:p-7 sm:pt-8 shadow-2xl">
+          <DialogHeader className="pr-12 sm:pr-14">
             <DialogTitle className="font-serif text-xl flex items-center gap-2">
               <Images className="h-5 w-5 text-gold" />
               {editingPhoto ? 'Edit Photo Details' : 'Upload New Photo'}
@@ -1971,25 +2216,68 @@ export default function AdminDashboardPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Category
+                  Main Category
                 </Label>
                 <Select
                   value={photoForm.category}
                   onValueChange={(val) =>
-                    setPhotoForm((prev) => ({ ...prev, category: val }))
+                    setPhotoForm((prev) => ({
+                      ...prev,
+                      category: val,
+                      subcategory: val === 'wedding' ? 'all-included' : '',
+                    }))
                   }
                 >
                   <SelectTrigger className="bg-background border-border text-xs h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="wedding">Wedding</SelectItem>
-                    <SelectItem value="portrait">Portrait</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
-                    <SelectItem value="event">Event</SelectItem>
+                    <SelectItem value="wedding">Wedding Photo Shoots</SelectItem>
+                    <SelectItem value="portrait">Indoor Photo Shoots</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Sub-Category Dropdown — Dynamic based on Main Category */}
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                <span>Sub-Category Event / Shoot Type</span>
+                <span className="text-[10px] text-gold font-normal">
+                  {photoForm.category === 'wedding' ? 'Ceremonial Event' : 'Indoor Shoot Type'}
+                </span>
+              </Label>
+              <Select
+                value={photoForm.subcategory || (photoForm.category === 'wedding' ? 'all-included' : 'none')}
+                onValueChange={(val) =>
+                  setPhotoForm((prev) => ({ ...prev, subcategory: val === 'none' ? '' : val }))
+                }
+              >
+                <SelectTrigger className="bg-background border-border text-xs h-9">
+                  <SelectValue placeholder="Select specific shoot/event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {photoForm.category === 'wedding' ? (
+                    <>
+                      <SelectItem value="all-included">All Included (Full Package / Default)</SelectItem>
+                      <SelectItem value="bridetobe">Bride to Be</SelectItem>
+                      <SelectItem value="engagement">Engagement</SelectItem>
+                      <SelectItem value="mehendi">Mehendi</SelectItem>
+                      <SelectItem value="marriage">Marriage</SelectItem>
+                      <SelectItem value="reception">Reception</SelectItem>
+                      <SelectItem value="postshoot">Post Shoot</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="none">All / General Studio</SelectItem>
+                      <SelectItem value="couplepre-wedding">Couple / Pre-Wedding</SelectItem>
+                      <SelectItem value="family">Family Photoshoot</SelectItem>
+                      <SelectItem value="graduation">Graduation Photoshoot</SelectItem>
+                      <SelectItem value="maternity">Maternity Photoshoot</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -2015,7 +2303,7 @@ export default function AdminDashboardPage() {
                     try {
                       localStorage.removeItem(DRAFT_STORAGE_KEY)
                     } catch {}
-                    setPhotoForm({ title: '', category: 'wedding', description: '', src: '' })
+                    setPhotoForm({ title: '', category: 'wedding', subcategory: '', description: '', src: '' })
                     toast.info('Draft cleared')
                   }}
                   className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
@@ -2050,8 +2338,8 @@ export default function AdminDashboardPage() {
           MODAL: ADD / EDIT SERVICE
          ======================================================== */}
       <Dialog open={serviceModalOpen} onOpenChange={setServiceModalOpen}>
-        <DialogContent className="sm:max-w-lg bg-card border-border">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90dvh] overflow-y-auto p-6 pt-7 sm:p-7 sm:pt-8 shadow-2xl">
+          <DialogHeader className="pr-12 sm:pr-14">
             <DialogTitle className="font-serif text-xl flex items-center gap-2">
               <Layers className="h-5 w-5 text-gold" />
               {editingService ? 'Edit Photography Service' : 'Add Photography Service'}

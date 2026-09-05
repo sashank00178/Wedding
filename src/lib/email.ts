@@ -15,24 +15,57 @@
  */
 
 import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-// ── Resend Client ───────────────────────────────────────────────────
+// ── Email Transports (Nodemailer Gmail SMTP & Resend) ───────────────
 
 let resendClient: Resend | null = null
+let nodemailerTransporter: nodemailer.Transporter | null = null
 
-function getResend(): Resend {
+function getNodemailer(): nodemailer.Transporter | null {
+  if (nodemailerTransporter) return nodemailerTransporter
+
+  const gmailUser = process.env.GMAIL_USER || process.env.SMTP_USER
+  const gmailPass = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS
+
+  if (gmailUser && gmailPass) {
+    if (process.env.SMTP_HOST) {
+      nodemailerTransporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT) === 465,
+        auth: {
+          user: gmailUser,
+          pass: gmailPass,
+        },
+      })
+    } else {
+      nodemailerTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: gmailUser,
+          pass: gmailPass,
+        },
+      })
+    }
+    return nodemailerTransporter
+  }
+
+  return null
+}
+
+function getResend(): Resend | null {
   if (!resendClient) {
     const apiKey = process.env.RESEND_API_KEY
     if (!apiKey || apiKey.startsWith('re_test_placeholder')) {
-      console.warn('[EMAIL] RESEND_API_KEY not configured — emails will be logged only')
-      return null!
+      return null
     }
     resendClient = new Resend(apiKey)
   }
   return resendClient
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@weddingmomentnepal.com'
+const FROM_EMAIL = process.env.GMAIL_USER || process.env.EMAIL_FROM || 'noreply@weddingmomentnepal.com'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || ''
 const SITE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 const BRAND = 'Wedding Moment Nepal'
@@ -51,34 +84,61 @@ async function sendEmail(params: {
   html: string
   replyTo?: string
 }): Promise<EmailResult> {
-  const resend = getResend()
+  const fromAddress = `${BRAND} <${FROM_EMAIL}>`
 
-  if (!resend) {
-    console.log(`[EMAIL-DRY-RUN] To: ${params.to}\n  Subject: ${params.subject}\n  (Resend not configured — email logged only)`)
-    return { success: true, error: 'dry-run' }
-  }
-
-  try {
-    const { data, error } = await resend.emails.send({
-      from: `${BRAND} <${FROM_EMAIL}>`,
-      to: [params.to],
-      subject: params.subject,
-      html: params.html,
-      replyTo: params.replyTo || FROM_EMAIL,
-    })
-
-    if (error) {
-      console.error('[EMAIL] Send failed:', error)
-      return { success: false, error: error.message }
+  // 1. Try Nodemailer (Gmail SMTP or custom SMTP) first
+  const transporter = getNodemailer()
+  if (transporter) {
+    try {
+      const info = await transporter.sendMail({
+        from: fromAddress,
+        to: params.to,
+        subject: params.subject,
+        html: params.html,
+        replyTo: params.replyTo || FROM_EMAIL,
+      })
+      console.log(`[EMAIL-SMTP] Sent: "${params.subject}" → ${params.to} (ID: ${info.messageId})`)
+      return { success: true, messageId: info.messageId }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'SMTP delivery failed'
+      console.error('[EMAIL-SMTP] Send error:', errorMsg)
+      // Fall through to Resend or dry-run
     }
-
-    console.log(`[EMAIL] Sent: ${params.subject} → ${params.to} (ID: ${data?.id})`)
-    return { success: true, messageId: data?.id }
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Unknown error'
-    console.error('[EMAIL] Exception:', msg)
-    return { success: false, error: msg }
   }
+
+  // 2. Try Resend if configured
+  const resend = getResend()
+  if (resend) {
+    try {
+      const { data, error } = await resend.emails.send({
+        from: fromAddress,
+        to: [params.to],
+        subject: params.subject,
+        html: params.html,
+        replyTo: params.replyTo || FROM_EMAIL,
+      })
+
+      if (error) {
+        console.error('[EMAIL-RESEND] Send failed:', error)
+        return { success: false, error: error.message }
+      }
+
+      console.log(`[EMAIL-RESEND] Sent: "${params.subject}" → ${params.to} (ID: ${data?.id})`)
+      return { success: true, messageId: data?.id }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Resend error'
+      console.error('[EMAIL-RESEND] Exception:', msg)
+      return { success: false, error: msg }
+    }
+  }
+
+  // 3. Fallback: Development dry-run logger
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log(`[EMAIL-DRY-RUN] To: ${params.to}`)
+  console.log(`  Subject: ${params.subject}`)
+  console.log(`  (Neither GMAIL_USER/GMAIL_APP_PASSWORD nor valid RESEND_API_KEY set)`)
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  return { success: true, error: 'dry-run' }
 }
 
 // ── Shared Email Layout ────────────────────────────────────────────

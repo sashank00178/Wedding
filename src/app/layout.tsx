@@ -22,13 +22,12 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Wedding Moment Nepal | Professional Photography Studio",
   description:
-    "Professional photography studio in Pokhara, Nepal specializing in portrait, wedding, commercial and event photography. We transform moments into timeless memories.",
+    "Professional photography studio in Pokhara, Nepal specializing in wedding and indoor portrait photography. We transform moments into timeless memories.",
   keywords: [
     "Wedding Photography Nepal",
     "Photography Pokhara",
+    "Indoor Photography",
     "Portrait Photography",
-    "Commercial Photography Nepal",
-    "Event Photography",
     "eSewa Payment",
     "Khalti Payment",
   ],
@@ -41,7 +40,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Wedding Moment Nepal | Professional Photography",
     description:
-      "Capture your precious moments with Wedding Moment Nepal, specializing in portrait, wedding, commercial, and event photography in Pokhara.",
+      "Capture your precious moments with Wedding Moment Nepal, specializing in wedding and indoor portrait photography in Pokhara.",
     type: "website",
     locale: "en_US",
   },

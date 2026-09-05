@@ -354,12 +354,14 @@ model GalleryPhoto {
   src         String
   title       String
   category    String   // wedding | portrait | commercial | event
+  subcategory String?  // couplepre-wedding | family | graduation | maternity | bridetobe | engagement | mehendi | marriage | reception | postshoot
   description String?
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([category])
+  @@index([subcategory])
   @@index([order])
   @@map("gallery_photos")
 }
