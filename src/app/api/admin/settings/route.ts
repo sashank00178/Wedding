@@ -39,9 +39,10 @@ export async function PUT(req: Request) {
     const body = await req.json()
     const { settings, hours, socialLinks } = body
 
-    // 1. Update Key-Value Site Settings
+    // 1. Update Key-Value Site Settings (excluding permanent developer-only copyright)
     if (settings && typeof settings === 'object') {
       for (const [key, value] of Object.entries(settings)) {
+        if (key === 'copyright') continue
         await db.siteSetting.upsert({
           where: { key },
           create: { key, value: String(value) },

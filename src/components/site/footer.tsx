@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { SITE, NAV_LINKS, SERVICES, STUDIO_HOURS } from '@/lib/site'
 import { SocialLinks } from '@/components/site/social-links'
+import { getCurrentBsYear } from '@/lib/nepali-date'
 
 export function Footer() {
   const pathname = usePathname()
@@ -143,12 +144,11 @@ export function Footer() {
 
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground text-center sm:text-left">
           <p>
-            &copy; {new Date().getFullYear()} {site.copyright}. All rights
-            reserved.
+            &copy; {getCurrentBsYear()} BS ({new Date().getFullYear()} AD) Capture Studios Nepal. All rights reserved to the developer of this website any reproduction or duplication of this website will lead to legal action.
           </p>
           <p className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-            Secure Payment Processing · Accepts eSewa, Khalti &amp; Nepal Banks
+            Secure Payment Processing · Accepts eSewa &amp; Nepal Banks
           </p>
         </div>
       </div>

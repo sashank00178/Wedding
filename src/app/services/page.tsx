@@ -58,7 +58,7 @@ const SERVICE_DETAILS: Record<string, { tagline: string; deliverables: string[];
 const FAQS = [
   {
     q: 'How do I secure our photoshoot date?',
-    a: 'You can reserve your date online with an advance deposit through eSewa, Khalti, or bank transfer via our booking system, or contact our admin team directly on WhatsApp.',
+    a: 'You can reserve your date online with an advance deposit through eSewa or bank transfer via our booking system, or contact our admin team directly on WhatsApp.',
   },
   {
     q: 'Do you travel outside of Pokhara?',

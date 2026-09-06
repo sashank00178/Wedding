@@ -320,7 +320,7 @@ model Booking {
 
 model PaymentOrder {
   id              String   @id @default(cuid())
-  gateway         String   // esewa | khalti | bank
+  gateway         String   // esewa | bank
   customerName    String
   customerPhone   String
   packageName     String
@@ -414,5 +414,26 @@ model SocialLink {
 
   @@index([order])
   @@map("social_links")
+}
+
+model PackagePrice {
+  id           String   @id @default(cuid())
+  packageKey   String   @unique
+  category     String   // indoor | wedding
+  subCategory  String   // couple | family | graduation | maternity | bride | combo | groom
+  name         String
+  description  String?
+  priceType    String   // advance | fixed | deposit
+  amount       Float
+  priceDisplay String?
+  isTbd        Boolean  @default(false)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+  @@index([subCategory])
+  @@index([order])
+  @@map("package_prices")
 }
 

@@ -29,7 +29,6 @@ export const metadata: Metadata = {
     "Indoor Photography",
     "Portrait Photography",
     "eSewa Payment",
-    "Khalti Payment",
   ],
   authors: [{ name: "Wedding Moment Nepal" }],
   icons: {

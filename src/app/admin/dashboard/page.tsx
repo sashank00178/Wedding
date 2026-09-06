@@ -37,10 +37,15 @@ import {
   User,
   Lock,
   RotateCcw,
+  Calendar,
+  ArrowUpDown,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formatBsDateTime, formatBsDate } from '@/lib/nepali-date'
+import type { PackagePriceData } from '@/lib/packages-data'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
@@ -154,6 +159,22 @@ interface SocialLinkItem {
 
 const DRAFT_STORAGE_KEY = 'wedding_moment_admin_photo_draft'
 
+/**
+ * Format ISO timestamp into Bikram Sambat (BS) format: "2083 Bhadra 21 · 3:45 PM"
+ */
+function formatTimestamp(isoString?: string | null): string {
+  if (!isoString) return '—'
+  return formatBsDateTime(isoString)
+}
+
+/**
+ * Format photoshoot event date (stored in AD) into Bikram Sambat (BS): "2083 Bhadra 21"
+ */
+function formatEventDate(dateString?: string | null): string {
+  if (!dateString) return '—'
+  return formatBsDate(dateString)
+}
+
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -173,6 +194,11 @@ export default function AdminDashboardPage() {
   const [siteSettings, setSiteSettings] = React.useState<Record<string, string>>({})
   const [studioHours, setStudioHours] = React.useState<StudioHourItem[]>([])
   const [socialLinks, setSocialLinks] = React.useState<SocialLinkItem[]>([])
+  const [packages, setPackages] = React.useState<PackagePriceData[]>([])
+  const [editedPrices, setEditedPrices] = React.useState<Record<string, number | string>>({})
+  const [editedPriceTypes, setEditedPriceTypes] = React.useState<Record<string, 'fixed' | 'advance'>>({})
+  const [savingPackageKey, setSavingPackageKey] = React.useState<string | null>(null)
+  const [packageCategoryTab, setPackageCategoryTab] = React.useState<'all' | 'indoor' | 'wedding'>('all')
 
   // Modal states
   const [galleryModalOpen, setGalleryModalOpen] = React.useState(false)
@@ -212,12 +238,21 @@ export default function AdminDashboardPage() {
     title: string
   } | null>(null)
 
-  // Filters
+  // Filters & Sorting
   const [galleryFilter, setGalleryFilter] = React.useState('all')
   const [bookingFilter, setBookingFilter] = React.useState('all')
   const [bookingSearch, setBookingSearch] = React.useState('')
+  const [bookingSort, setBookingSort] = React.useState<
+    'created-desc' | 'created-asc' | 'date-asc' | 'date-desc'
+  >('created-desc')
   const [paymentFilter, setPaymentFilter] = React.useState('all')
+  const [paymentSort, setPaymentSort] = React.useState<
+    'created-desc' | 'created-asc' | 'amount-desc' | 'amount-asc'
+  >('created-desc')
   const [messageSearch, setMessageSearch] = React.useState('')
+  const [messageSort, setMessageSort] = React.useState<
+    'created-desc' | 'created-asc'
+  >('created-desc')
 
   React.useEffect(() => {
     setMounted(true)
@@ -264,13 +299,14 @@ export default function AdminDashboardPage() {
   const loadAllData = React.useCallback(async () => {
     setLoadingData(true)
     try {
-      const [gRes, sRes, bRes, pRes, setRes, mRes] = await Promise.all([
+      const [gRes, sRes, bRes, pRes, setRes, mRes, pkgRes] = await Promise.all([
         authFetch('/api/admin/gallery'),
         authFetch('/api/admin/services'),
         authFetch('/api/admin/bookings'),
         authFetch('/api/admin/payments'),
         authFetch('/api/admin/settings'),
         authFetch('/api/admin/messages'),
+        authFetch('/api/admin/packages'),
       ])
 
       if (gRes.ok) setGallery(await gRes.json())
@@ -278,6 +314,18 @@ export default function AdminDashboardPage() {
       if (bRes.ok) setBookings(await bRes.json())
       if (pRes.ok) setPayments(await pRes.json())
       if (mRes.ok) setMessages(await mRes.json())
+      if (pkgRes.ok) {
+        const pkgs: PackagePriceData[] = await pkgRes.json()
+        setPackages(pkgs)
+        const pricesMap: Record<string, number | string> = {}
+        const typesMap: Record<string, 'fixed' | 'advance'> = {}
+        for (const p of pkgs) {
+          pricesMap[p.packageKey] = p.amount
+          typesMap[p.packageKey] = p.priceType === 'fixed' ? 'fixed' : 'advance'
+        }
+        setEditedPrices(pricesMap)
+        setEditedPriceTypes(typesMap)
+      }
       if (setRes.ok) {
         const data = await setRes.json()
         setSiteSettings(data.settings || {})
@@ -542,6 +590,50 @@ export default function AdminDashboardPage() {
   }
 
   // ----------------------------------------------------
+  // Package Price Update Handler
+  // ----------------------------------------------------
+  const handleSavePackagePrice = async (packageKey: string) => {
+    const rawVal = editedPrices[packageKey]
+    const amountVal = Number(rawVal)
+    if (isNaN(amountVal) || amountVal <= 0) {
+      toast.error('Please enter a valid positive numeric price.')
+      return
+    }
+
+    const priceType = editedPriceTypes[packageKey] || 'advance'
+
+    setSavingPackageKey(packageKey)
+    try {
+      const res = await authFetch('/api/admin/packages', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packageKey, amount: amountVal, priceType }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to update package price')
+      }
+
+      const updated: PackagePriceData = await res.json()
+      setPackages((prev) =>
+        prev.map((p) => (p.packageKey === packageKey ? updated : p))
+      )
+      setEditedPrices((prev) => ({ ...prev, [packageKey]: updated.amount }))
+      setEditedPriceTypes((prev) => ({
+        ...prev,
+        [packageKey]: updated.priceType === 'fixed' ? 'fixed' : 'advance',
+      }))
+      const typeLabel = updated.priceType === 'fixed' ? 'Fixed Price' : 'Advance Price'
+      toast.success(`Updated: ${updated.name} → NPR ${amountVal.toLocaleString()} (${typeLabel})`)
+    } catch (err: any) {
+      toast.error(err.message || 'Error updating price')
+    } finally {
+      setSavingPackageKey(null)
+    }
+  }
+
+  // ----------------------------------------------------
   // Booking Status Handler
   // ----------------------------------------------------
   const handleUpdateBookingStatus = async (id: string, newStatus: string) => {
@@ -690,31 +782,67 @@ export default function AdminDashboardPage() {
     galleryFilter === 'all' ? true : p.category === galleryFilter
   )
 
-  const filteredBookings = bookings.filter((b) => {
-    const matchStatus = bookingFilter === 'all' || b.status === bookingFilter
-    const matchSearch =
-      bookingSearch === '' ||
-      b.name.toLowerCase().includes(bookingSearch.toLowerCase()) ||
-      b.email.toLowerCase().includes(bookingSearch.toLowerCase()) ||
-      b.phone.includes(bookingSearch) ||
-      b.service.toLowerCase().includes(bookingSearch.toLowerCase())
-    return matchStatus && matchSearch
-  })
+  const filteredBookings = bookings
+    .filter((b) => {
+      const matchStatus = bookingFilter === 'all' || b.status === bookingFilter
+      const matchSearch =
+        bookingSearch === '' ||
+        b.name.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+        b.email.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+        b.phone.includes(bookingSearch) ||
+        b.service.toLowerCase().includes(bookingSearch.toLowerCase())
+      return matchStatus && matchSearch
+    })
+    .sort((a, b) => {
+      if (bookingSort === 'created-asc') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      }
+      if (bookingSort === 'date-asc') {
+        return (a.date || '').localeCompare(b.date || '')
+      }
+      if (bookingSort === 'date-desc') {
+        return (b.date || '').localeCompare(a.date || '')
+      }
+      // default: created-desc (newest booked on first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
 
-  const filteredPayments = payments.filter((p) =>
-    paymentFilter === 'all' ? true : p.gateway === paymentFilter || p.status === paymentFilter
-  )
-
-  const filteredMessages = messages.filter((m) => {
-    if (!messageSearch) return true
-    const q = messageSearch.toLowerCase()
-    return (
-      m.name.toLowerCase().includes(q) ||
-      m.email.toLowerCase().includes(q) ||
-      m.subject.toLowerCase().includes(q) ||
-      m.message.toLowerCase().includes(q)
+  const filteredPayments = payments
+    .filter((p) =>
+      paymentFilter === 'all' ? true : p.gateway === paymentFilter || p.status === paymentFilter
     )
-  })
+    .sort((a, b) => {
+      if (paymentSort === 'created-asc') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      }
+      if (paymentSort === 'amount-desc') {
+        return (b.amount || 0) - (a.amount || 0)
+      }
+      if (paymentSort === 'amount-asc') {
+        return (a.amount || 0) - (b.amount || 0)
+      }
+      // default: created-desc (newest paid on first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
+
+  const filteredMessages = messages
+    .filter((m) => {
+      if (!messageSearch) return true
+      const q = messageSearch.toLowerCase()
+      return (
+        m.name.toLowerCase().includes(q) ||
+        m.email.toLowerCase().includes(q) ||
+        m.subject.toLowerCase().includes(q) ||
+        m.message.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      if (messageSort === 'created-asc') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      }
+      // default: created-desc (newest received first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
 
   // Quick stats
   const pendingBookingsCount = bookings.filter((b) => b.status === 'pending').length
@@ -1204,8 +1332,20 @@ export default function AdminDashboardPage() {
                                 <p className="font-semibold text-sm text-foreground">
                                   {b.name}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {b.service} &bull; {b.phone} &bull; {b.date}
+                                <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5 mt-0.5">
+                                  <span className="font-medium text-foreground/90">{b.service}</span>
+                                  <span>&bull;</span>
+                                  <span>{b.phone}</span>
+                                  <span>&bull;</span>
+                                  <span className="inline-flex items-center gap-1 text-foreground font-medium">
+                                    <Calendar className="h-3 w-3 text-gold" />
+                                    Reserved: {formatEventDate(b.date)}
+                                    <span className="text-[10px] text-muted-foreground font-mono">({b.date})</span>
+                                  </span>
+                                </p>
+                                <p className="text-[11px] text-muted-foreground/80 flex items-center gap-1 mt-1">
+                                  <Clock className="h-3 w-3 text-muted-foreground/70" />
+                                  <span>Booked On: {formatTimestamp(b.createdAt)}</span>
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
@@ -1479,6 +1619,394 @@ export default function AdminDashboardPage() {
                       </div>
                     ))}
                   </div>
+
+                  {/* ========================================================
+                      PACKAGE PRICING & ADVANCE RATES MANAGER
+                     ======================================================== */}
+                  <div className="pt-8 border-t border-border/80 space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gold/15 border border-gold/30 text-gold text-[10px] font-bold uppercase tracking-wider mb-1.5">
+                          <DollarSign className="h-3 w-3" />
+                          <span>Live Pricing Configuration</span>
+                        </div>
+                        <h3 className="font-serif text-lg font-bold text-foreground">
+                          Package Pricing &amp; Advance Rates
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          Edit the official Advance Deposit or Fixed Rate for each package. Updates take effect immediately across all booking forms and service pages.
+                        </p>
+                      </div>
+
+                      {/* Category Filter Pills */}
+                      <div className="flex items-center gap-1.5 bg-card border border-border p-1 rounded-xl shrink-0 self-start sm:self-center">
+                        <button
+                          type="button"
+                          onClick={() => setPackageCategoryTab('all')}
+                          className={cn(
+                            'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                            packageCategoryTab === 'all'
+                              ? 'bg-gold text-black shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          All ({packages.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPackageCategoryTab('indoor')}
+                          className={cn(
+                            'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                            packageCategoryTab === 'indoor'
+                              ? 'bg-gold text-black shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          Indoor ({packages.filter((p) => p.category === 'indoor').length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPackageCategoryTab('wedding')}
+                          className={cn(
+                            'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                            packageCategoryTab === 'wedding'
+                              ? 'bg-gold text-black shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          Wedding ({packages.filter((p) => p.category === 'wedding').length})
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Package Groups */}
+                    <div className="space-y-6">
+                      {(packageCategoryTab === 'all' || packageCategoryTab === 'indoor') && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 pb-2 border-b border-border/60">
+                            <Camera className="h-4 w-4 text-gold" />
+                            <h4 className="font-serif text-sm font-bold text-foreground">
+                              Indoor Studio Photography Packages
+                            </h4>
+                            <span className="text-[11px] text-muted-foreground font-mono">
+                              (Couple, Family, Graduation, Maternity)
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3">
+                                {packages
+                                  .filter((p) => p.category === 'indoor')
+                                  .map((pkg) => {
+                                    const currentVal = editedPrices[pkg.packageKey] ?? pkg.amount
+                                    const currentType = editedPriceTypes[pkg.packageKey] ?? (pkg.priceType === 'fixed' ? 'fixed' : 'advance')
+                                    const isDirty =
+                                      Number(currentVal) !== pkg.amount ||
+                                      currentType !== (pkg.priceType === 'fixed' ? 'fixed' : 'advance')
+                                    const isSaving = savingPackageKey === pkg.packageKey
+
+                                    return (
+                                      <div
+                                        key={pkg.packageKey}
+                                        className={cn(
+                                          'bg-card border rounded-xl p-4 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm',
+                                          isDirty ? 'border-gold/60 ring-1 ring-gold/20' : 'border-border'
+                                        )}
+                                      >
+                                        <div className="space-y-1 flex-1">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <span className="text-xs font-bold text-foreground">
+                                              {pkg.name}
+                                            </span>
+                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-secondary text-foreground/80 border border-border">
+                                              {pkg.subCategory === 'couple' && 'Couple / Pre-Wedding'}
+                                              {pkg.subCategory === 'family' && 'Family Shoot'}
+                                              {pkg.subCategory === 'graduation' && 'Graduation Shoot'}
+                                              {pkg.subCategory === 'maternity' && 'Maternity Shoot'}
+                                            </span>
+                                            <span
+                                              className={cn(
+                                                'px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider',
+                                                currentType === 'fixed'
+                                                  ? 'bg-blue-500/15 text-blue-500 border border-blue-500/30'
+                                                  : 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
+                                              )}
+                                            >
+                                              {currentType === 'fixed' ? 'Fixed Price' : 'Advance Price'}
+                                            </span>
+                                          </div>
+                                          {pkg.description && (
+                                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                                              {pkg.description}
+                                            </p>
+                                          )}
+                                        </div>
+
+                                        {/* Price & Price-Type Edit Controls */}
+                                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2.5 shrink-0">
+                                          {/* Price Type Option Selector */}
+                                          <div className="inline-flex rounded-lg p-0.5 bg-secondary/80 border border-border">
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setEditedPriceTypes((prev) => ({
+                                                  ...prev,
+                                                  [pkg.packageKey]: 'advance',
+                                                }))
+                                              }
+                                              className={cn(
+                                                'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap',
+                                                currentType === 'advance'
+                                                  ? 'bg-emerald-600 text-white shadow-sm'
+                                                  : 'text-muted-foreground hover:text-foreground'
+                                              )}
+                                            >
+                                              Advance Price
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setEditedPriceTypes((prev) => ({
+                                                  ...prev,
+                                                  [pkg.packageKey]: 'fixed',
+                                                }))
+                                              }
+                                              className={cn(
+                                                'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap',
+                                                currentType === 'fixed'
+                                                  ? 'bg-blue-600 text-white shadow-sm'
+                                                  : 'text-muted-foreground hover:text-foreground'
+                                              )}
+                                            >
+                                              Fixed Price
+                                            </button>
+                                          </div>
+
+                                          <div className="flex items-center gap-2">
+                                            <div className="relative w-36 sm:w-40">
+                                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground">
+                                                NPR
+                                              </span>
+                                              <Input
+                                                type="number"
+                                                min="100"
+                                                step="500"
+                                                value={currentVal}
+                                                onChange={(e) => {
+                                                  const val = e.target.value
+                                                  setEditedPrices((prev) => ({
+                                                    ...prev,
+                                                    [pkg.packageKey]: val,
+                                                  }))
+                                                }}
+                                                className="pl-11 h-9 text-xs font-mono font-bold bg-background text-foreground"
+                                                placeholder="Price (NPR)"
+                                              />
+                                            </div>
+
+                                            <Button
+                                              size="sm"
+                                              onClick={() => handleSavePackagePrice(pkg.packageKey)}
+                                              disabled={isSaving || !isDirty || !currentVal || Number(currentVal) <= 0}
+                                              className={cn(
+                                                'h-9 px-3.5 text-xs font-semibold gap-1.5 shadow-sm transition-all',
+                                                isDirty
+                                                  ? 'bg-gold text-black hover:bg-gold/90'
+                                                  : 'bg-muted text-muted-foreground opacity-50 cursor-not-allowed'
+                                              )}
+                                            >
+                                              {isSaving ? (
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                              ) : (
+                                                <Save className="h-3.5 w-3.5" />
+                                              )}
+                                              <span>Save</span>
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                          </div>
+                        </div>
+                      )}
+
+                      {(packageCategoryTab === 'all' || packageCategoryTab === 'wedding') && (
+                        <div className="space-y-4 pt-4">
+                          <div className="flex items-center gap-2 pb-2 border-b border-border/60">
+                            <Sparkles className="h-4 w-4 text-gold" />
+                            <h4 className="font-serif text-sm font-bold text-foreground">
+                              Wedding Ceremonial Packages
+                            </h4>
+                            <span className="text-[11px] text-muted-foreground font-mono">
+                              (Bride Side, Combo, Groom Side)
+                            </span>
+                          </div>
+
+                          {/* Group by Wedding Side */}
+                          {(['bride', 'combo', 'groom'] as const).map((side) => {
+                            const sidePackages = packages.filter(
+                              (p) => p.category === 'wedding' && p.subCategory === side
+                            )
+                            if (sidePackages.length === 0) return null
+
+                            const sideTitle =
+                              side === 'bride'
+                                ? 'Bride Side Packages'
+                                : side === 'combo'
+                                ? 'Combo (Both Sides) Packages'
+                                : 'Groom Side Packages'
+
+                            return (
+                              <div key={side} className="space-y-2.5">
+                                <div className="flex items-center gap-2 text-xs font-bold text-foreground/80 pl-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                                  <span>{sideTitle}</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-2.5">
+                                  {sidePackages.map((pkg) => {
+                                    const currentVal = editedPrices[pkg.packageKey] ?? pkg.amount
+                                    const currentType = editedPriceTypes[pkg.packageKey] ?? (pkg.priceType === 'fixed' ? 'fixed' : 'advance')
+                                    const isDirty =
+                                      Number(currentVal) !== pkg.amount ||
+                                      currentType !== (pkg.priceType === 'fixed' ? 'fixed' : 'advance')
+                                    const isSaving = savingPackageKey === pkg.packageKey
+
+                                    return (
+                                      <div
+                                        key={pkg.packageKey}
+                                        className={cn(
+                                          'bg-card border rounded-xl p-4 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm',
+                                          isDirty ? 'border-gold/60 ring-1 ring-gold/20' : 'border-border'
+                                        )}
+                                      >
+                                        <div className="space-y-1 flex-1">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <span className="text-xs font-bold text-foreground">
+                                              {pkg.name}
+                                            </span>
+                                            <span
+                                              className={cn(
+                                                'px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider',
+                                                pkg.isTbd && !isDirty
+                                                  ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                                                  : currentType === 'fixed'
+                                                  ? 'bg-blue-500/15 text-blue-500 border border-blue-500/30'
+                                                  : 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
+                                              )}
+                                            >
+                                              {pkg.isTbd && !isDirty
+                                                ? 'Deposit (TBD Ceremony)'
+                                                : currentType === 'fixed'
+                                                ? 'Fixed Price'
+                                                : 'Advance Price'}
+                                            </span>
+                                          </div>
+                                          {pkg.description && (
+                                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                                              {pkg.description}
+                                            </p>
+                                          )}
+                                          {pkg.isTbd && (
+                                            <p className="text-[11px] text-amber-500/90 font-medium">
+                                              Set price and choose Fixed or Advance to replace &ldquo;TBD&rdquo; with active rate.
+                                            </p>
+                                          )}
+                                        </div>
+
+                                        {/* Price & Price-Type Edit Controls */}
+                                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2.5 shrink-0">
+                                          {/* Price Type Option Selector */}
+                                          <div className="inline-flex rounded-lg p-0.5 bg-secondary/80 border border-border">
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setEditedPriceTypes((prev) => ({
+                                                  ...prev,
+                                                  [pkg.packageKey]: 'advance',
+                                                }))
+                                              }
+                                              className={cn(
+                                                'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap',
+                                                currentType === 'advance'
+                                                  ? 'bg-emerald-600 text-white shadow-sm'
+                                                  : 'text-muted-foreground hover:text-foreground'
+                                              )}
+                                            >
+                                              Advance Price
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setEditedPriceTypes((prev) => ({
+                                                  ...prev,
+                                                  [pkg.packageKey]: 'fixed',
+                                                }))
+                                              }
+                                              className={cn(
+                                                'px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap',
+                                                currentType === 'fixed'
+                                                  ? 'bg-blue-600 text-white shadow-sm'
+                                                  : 'text-muted-foreground hover:text-foreground'
+                                              )}
+                                            >
+                                              Fixed Price
+                                            </button>
+                                          </div>
+
+                                          <div className="flex items-center gap-2">
+                                            <div className="relative w-36 sm:w-40">
+                                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground">
+                                                NPR
+                                              </span>
+                                              <Input
+                                                type="number"
+                                                min="100"
+                                                step="500"
+                                                value={currentVal}
+                                                onChange={(e) => {
+                                                  const val = e.target.value
+                                                  setEditedPrices((prev) => ({
+                                                    ...prev,
+                                                    [pkg.packageKey]: val,
+                                                  }))
+                                                }}
+                                                className="pl-11 h-9 text-xs font-mono font-bold bg-background text-foreground"
+                                                placeholder="Price (NPR)"
+                                              />
+                                            </div>
+
+                                            <Button
+                                              size="sm"
+                                              onClick={() => handleSavePackagePrice(pkg.packageKey)}
+                                              disabled={isSaving || !isDirty || !currentVal || Number(currentVal) <= 0}
+                                              className={cn(
+                                                'h-9 px-3.5 text-xs font-semibold gap-1.5 shadow-sm transition-all',
+                                                isDirty
+                                                  ? 'bg-gold text-black hover:bg-gold/90'
+                                                  : 'bg-muted text-muted-foreground opacity-50 cursor-not-allowed'
+                                              )}
+                                            >
+                                              {isSaving ? (
+                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                              ) : (
+                                                <Save className="h-3.5 w-3.5" />
+                                              )}
+                                              <span>Save</span>
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1488,7 +2016,7 @@ export default function AdminDashboardPage() {
               {activeTab === 'bookings' && (
                 <div className="space-y-6 animate-in fade-in-50">
                   {/* Search and Filters */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <div className="relative w-full sm:w-72">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -1499,21 +2027,38 @@ export default function AdminDashboardPage() {
                       />
                     </div>
 
-                    <div className="flex items-center gap-1.5 bg-card border border-border p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
-                      {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map((st) => (
-                        <button
-                          key={st}
-                          onClick={() => setBookingFilter(st)}
-                          className={cn(
-                            'px-3 py-1.5 rounded-lg text-xs font-medium capitalize whitespace-nowrap transition-colors',
-                            bookingFilter === st
-                              ? 'bg-gold text-black font-bold'
-                              : 'text-muted-foreground hover:text-foreground'
-                          )}
-                        >
-                          {st}
-                        </button>
-                      ))}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <div className="flex items-center gap-1.5 bg-card border border-border p-1 rounded-xl overflow-x-auto">
+                        {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map((st) => (
+                          <button
+                            key={st}
+                            onClick={() => setBookingFilter(st)}
+                            className={cn(
+                              'px-3 py-1.5 rounded-lg text-xs font-medium capitalize whitespace-nowrap transition-colors',
+                              bookingFilter === st
+                                ? 'bg-gold text-black font-bold'
+                                : 'text-muted-foreground hover:text-foreground'
+                            )}
+                          >
+                            {st}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 bg-card border border-border px-2.5 py-1 rounded-xl">
+                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Select value={bookingSort} onValueChange={(val: any) => setBookingSort(val)}>
+                          <SelectTrigger className="h-8 text-xs border-0 bg-transparent p-0 focus:ring-0 w-44">
+                            <SelectValue placeholder="Sort Bookings" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="created-desc">Booked: Newest First</SelectItem>
+                            <SelectItem value="created-asc">Booked: Oldest First</SelectItem>
+                            <SelectItem value="date-asc">Reserved: Earliest Date</SelectItem>
+                            <SelectItem value="date-desc">Reserved: Latest Date</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
 
@@ -1534,7 +2079,8 @@ export default function AdminDashboardPage() {
                             <tr>
                               <th className="py-3.5 px-4">Client</th>
                               <th className="py-3.5 px-4">Service</th>
-                              <th className="py-3.5 px-4">Preferred Date</th>
+                              <th className="py-3.5 px-4">Reserved Date (BS)</th>
+                              <th className="py-3.5 px-4">Booked On (BS)</th>
                               <th className="py-3.5 px-4">Notes</th>
                               <th className="py-3.5 px-4">Status</th>
                               <th className="py-3.5 px-4 text-right">Actions</th>
@@ -1557,8 +2103,24 @@ export default function AdminDashboardPage() {
                                 <td className="py-3.5 px-4 font-medium text-foreground">
                                   {b.service}
                                 </td>
-                                <td className="py-3.5 px-4 font-mono text-muted-foreground">
-                                  {b.date}
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  <div className="flex flex-col">
+                                    <span className="font-semibold text-foreground flex items-center gap-1.5 font-mono text-xs">
+                                      <Calendar className="h-3.5 w-3.5 text-gold shrink-0" />
+                                      {formatEventDate(b.date)}
+                                    </span>
+                                    {b.date && (
+                                      <span className="text-[10px] text-muted-foreground/70 font-mono pl-5">
+                                        AD: {b.date}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+                                    <Clock className="h-3.5 w-3.5 text-gold shrink-0" />
+                                    <span>{formatTimestamp(b.createdAt)}</span>
+                                  </div>
                                 </td>
                                 <td className="py-3.5 px-4 max-w-xs text-muted-foreground truncate">
                                   {b.message || '—'}
@@ -1619,29 +2181,46 @@ export default function AdminDashboardPage() {
                  ======================================================== */}
               {activeTab === 'payments' && (
                 <div className="space-y-6 animate-in fade-in-50">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <div>
                       <h2 className="font-serif text-lg font-bold">Payment Transactions</h2>
                       <p className="text-xs text-muted-foreground">
-                        Customer payments initiated or completed through eSewa, Khalti &amp; Bank.
+                        Customer payments initiated or completed through eSewa &amp; Bank.
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1.5 bg-card border border-border p-1 rounded-xl">
-                      {['all', 'esewa', 'khalti', 'bank', 'paid'].map((g) => (
-                        <button
-                          key={g}
-                          onClick={() => setPaymentFilter(g)}
-                          className={cn(
-                            'px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors',
-                            paymentFilter === g
-                              ? 'bg-gold text-black font-bold'
-                              : 'text-muted-foreground hover:text-foreground'
-                          )}
-                        >
-                          {g}
-                        </button>
-                      ))}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <div className="flex items-center gap-1.5 bg-card border border-border p-1 rounded-xl">
+                        {['all', 'esewa', 'bank', 'paid'].map((g) => (
+                          <button
+                            key={g}
+                            onClick={() => setPaymentFilter(g)}
+                            className={cn(
+                              'px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors',
+                              paymentFilter === g
+                                ? 'bg-gold text-black font-bold'
+                                : 'text-muted-foreground hover:text-foreground'
+                            )}
+                          >
+                            {g}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 bg-card border border-border px-2.5 py-1 rounded-xl">
+                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Select value={paymentSort} onValueChange={(val: any) => setPaymentSort(val)}>
+                          <SelectTrigger className="h-8 text-xs border-0 bg-transparent p-0 focus:ring-0 w-44">
+                            <SelectValue placeholder="Sort Payments" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="created-desc">Paid: Newest First</SelectItem>
+                            <SelectItem value="created-asc">Paid: Oldest First</SelectItem>
+                            <SelectItem value="amount-desc">Amount: High to Low</SelectItem>
+                            <SelectItem value="amount-asc">Amount: Low to High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
 
@@ -1663,6 +2242,7 @@ export default function AdminDashboardPage() {
                               <th className="py-3.5 px-4">Customer</th>
                               <th className="py-3.5 px-4">Package</th>
                               <th className="py-3.5 px-4">Amount</th>
+                              <th className="py-3.5 px-4">Paid On (BS)</th>
                               <th className="py-3.5 px-4">Transaction ID</th>
                               <th className="py-3.5 px-4">Status</th>
                               <th className="py-3.5 px-4 text-right">Actions</th>
@@ -1692,6 +2272,12 @@ export default function AdminDashboardPage() {
                                 </td>
                                 <td className="py-3.5 px-4 font-bold text-gold text-sm">
                                   Rs. {p.amount.toLocaleString()}
+                                </td>
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+                                    <Clock className="h-3.5 w-3.5 text-gold shrink-0" />
+                                    <span>{formatTimestamp(p.createdAt)}</span>
+                                  </div>
                                 </td>
                                 <td className="py-3.5 px-4 font-mono text-[11px] text-muted-foreground">
                                   {p.transactionUuid}
@@ -1766,8 +2352,8 @@ export default function AdminDashboardPage() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <div className="relative w-full sm:w-72">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative w-full sm:w-64">
                           <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                           <Input
                             placeholder="Search by name, email, or message..."
@@ -1775,6 +2361,18 @@ export default function AdminDashboardPage() {
                             onChange={(e) => setMessageSearch(e.target.value)}
                             className="pl-9 h-9 text-xs bg-background border-border"
                           />
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-background border border-border px-2.5 py-1 rounded-xl">
+                          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <Select value={messageSort} onValueChange={(val: any) => setMessageSort(val)}>
+                            <SelectTrigger className="h-7 text-xs border-0 bg-transparent p-0 focus:ring-0 w-36">
+                              <SelectValue placeholder="Sort Messages" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="created-desc">Received: Newest</SelectItem>
+                              <SelectItem value="created-asc">Received: Oldest</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>
@@ -1817,15 +2415,11 @@ export default function AdminDashboardPage() {
                                 </div>
                               </div>
 
-                              <span className="text-[11px] text-muted-foreground self-start sm:self-center">
-                                {new Date(m.createdAt).toLocaleString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                  hour: 'numeric',
-                                  minute: '2-digit',
-                                })}
-                              </span>
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-background border border-border text-[11px] text-muted-foreground self-start sm:self-center">
+                                <Clock className="h-3 w-3 text-gold shrink-0" />
+                                <span className="font-semibold text-foreground/80">Received On (BS):</span>
+                                <span className="font-mono">{formatTimestamp(m.createdAt)}</span>
+                              </div>
                             </div>
 
                             <div className="bg-background/80 border border-border/60 rounded-lg p-4 text-xs sm:text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
@@ -2012,7 +2606,7 @@ export default function AdminDashboardPage() {
                   <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
                     <h2 className="font-serif text-lg font-bold mb-1">Website Brand &amp; Text Content</h2>
                     <p className="text-xs text-muted-foreground mb-6">
-                      Customize studio branding, hero section subtitles, since year, and footer copyright text.
+                      Customize studio branding, hero section subtitles, tagline, and established year.
                     </p>
 
                     <div className="space-y-5">
@@ -2080,19 +2674,6 @@ export default function AdminDashboardPage() {
                           value={siteSettings.footerNote || ''}
                           onChange={(e) =>
                             setSiteSettings((prev) => ({ ...prev, footerNote: e.target.value }))
-                          }
-                          className="bg-background border-border text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                          Copyright Owner Name
-                        </Label>
-                        <Input
-                          value={siteSettings.copyright || ''}
-                          onChange={(e) =>
-                            setSiteSettings((prev) => ({ ...prev, copyright: e.target.value }))
                           }
                           className="bg-background border-border text-xs"
                         />

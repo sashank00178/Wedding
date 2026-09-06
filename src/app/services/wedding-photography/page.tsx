@@ -266,6 +266,44 @@ export default function WeddingPhotographyPage() {
   const [activeMainCat, setActiveMainCat] = React.useState<WeddingMainCategoryKey>('combo')
   const [activeSubCat, setActiveSubCat] = React.useState<string>('All Included')
 
+  const [packages, setPackages] = React.useState<
+    Record<string, { amount: number; priceDisplay: string; isTbd: boolean; priceType: 'fixed' | 'advance' }>
+  >({})
+
+  React.useEffect(() => {
+    fetch('/api/packages')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data?.packages || [])
+        if (list.length > 0) {
+          const map: Record<string, { amount: number; priceDisplay: string; isTbd: boolean; priceType: 'fixed' | 'advance' }> = {}
+          for (const p of list) {
+            map[p.packageKey] = {
+              amount: p.amount,
+              priceDisplay: p.priceDisplay,
+              isTbd: Boolean(p.isTbd),
+              priceType: (p.priceType === 'advance' ? 'advance' : 'fixed') as 'fixed' | 'advance',
+            }
+          }
+          setPackages(map)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const getPackagePriceLabel = (packageKey: string, fallback: string) => {
+    const pkg = packages[packageKey]
+    if (!pkg) return fallback
+    if (pkg.isTbd) return fallback
+    return `NPR ${pkg.amount.toLocaleString()}`
+  }
+
+  const getPackagePriceTypeLabel = (packageKey: string, fallback: string = 'Price') => {
+    const pkg = packages[packageKey]
+    if (!pkg) return fallback
+    return pkg.priceType === 'fixed' ? 'Fixed Rate' : 'Advance Price'
+  }
+
   const currentConfig = WEDDING_CATEGORIES[activeMainCat]
 
   // When switching main category, default to "All Included"
@@ -427,7 +465,7 @@ export default function WeddingPhotographyPage() {
 
                     <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
                       <span className="text-muted-foreground font-medium">All Included:</span>
-                      <span className="font-bold text-gold text-sm">{cat.priceLabel}</span>
+                      <span className="font-bold text-gold text-sm">{getPackagePriceLabel(cat.allIncludedPackageKey, cat.priceLabel)}</span>
                     </div>
                   </button>
                 )
@@ -604,11 +642,11 @@ export default function WeddingPhotographyPage() {
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <div>
                           <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
-                            Package Price
+                            {getPackagePriceTypeLabel(currentConfig.allIncludedPackageKey, 'Package Price')}
                           </span>
                           <div className="flex items-baseline gap-2">
                             <span className="font-serif text-2xl sm:text-3xl font-bold text-gold">
-                              {currentConfig.priceLabel}
+                              {getPackagePriceLabel(currentConfig.allIncludedPackageKey, currentConfig.priceLabel)}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               (All ceremonies &amp; deliverables included)
@@ -736,11 +774,11 @@ export default function WeddingPhotographyPage() {
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <div>
                           <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
-                            {BRIDE_TO_BE_CONFIG.priceType}
+                            {getPackagePriceTypeLabel(BRIDE_TO_BE_CONFIG.packageKey, BRIDE_TO_BE_CONFIG.priceType)}
                           </span>
                           <div className="flex items-baseline gap-2">
                             <span className="font-serif text-2xl sm:text-3xl font-bold text-gold">
-                              {BRIDE_TO_BE_CONFIG.priceLabel}
+                              {getPackagePriceLabel(BRIDE_TO_BE_CONFIG.packageKey, BRIDE_TO_BE_CONFIG.priceLabel)}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               (Duration: {BRIDE_TO_BE_CONFIG.duration})
@@ -872,11 +910,11 @@ export default function WeddingPhotographyPage() {
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <div>
                           <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
-                            {MEHENDI_CONFIG.priceType}
+                            {getPackagePriceTypeLabel(MEHENDI_CONFIG.packageKey, MEHENDI_CONFIG.priceType)}
                           </span>
                           <div className="flex items-baseline gap-2">
                             <span className="font-serif text-2xl sm:text-3xl font-bold text-gold">
-                              {MEHENDI_CONFIG.priceLabel}
+                              {getPackagePriceLabel(MEHENDI_CONFIG.packageKey, MEHENDI_CONFIG.priceLabel)}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               (Duration: {MEHENDI_CONFIG.duration})
@@ -1001,11 +1039,11 @@ export default function WeddingPhotographyPage() {
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <div>
                           <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
-                            {currentEngagement.priceType}
+                            {getPackagePriceTypeLabel(currentEngagement.packageKey, currentEngagement.priceType)}
                           </span>
                           <div className="flex items-baseline gap-2">
                             <span className="font-serif text-2xl sm:text-3xl font-bold text-gold">
-                              {currentEngagement.priceLabel}
+                              {getPackagePriceLabel(currentEngagement.packageKey, currentEngagement.priceLabel)}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               ({currentEngagement.tag})
@@ -1135,11 +1173,11 @@ export default function WeddingPhotographyPage() {
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <div>
                           <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
-                            {currentMarriage.priceType}
+                            {getPackagePriceTypeLabel(currentMarriage.packageKey, currentMarriage.priceType)}
                           </span>
                           <div className="flex items-baseline gap-2">
                             <span className="font-serif text-2xl sm:text-3xl font-bold text-gold">
-                              {currentMarriage.priceLabel}
+                              {getPackagePriceLabel(currentMarriage.packageKey, currentMarriage.priceLabel)}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               (Duration: {currentMarriage.duration})
@@ -1264,11 +1302,11 @@ export default function WeddingPhotographyPage() {
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <div>
                           <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
-                            {currentReception.priceType}
+                            {getPackagePriceTypeLabel(currentReception.packageKey, currentReception.priceType)}
                           </span>
                           <div className="flex items-baseline gap-2">
                             <span className="font-serif text-2xl sm:text-3xl font-bold text-gold">
-                              {currentReception.priceLabel}
+                              {getPackagePriceLabel(currentReception.packageKey, currentReception.priceLabel)}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               (Duration: {currentReception.duration})
@@ -1396,11 +1434,11 @@ export default function WeddingPhotographyPage() {
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <div>
                           <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
-                            {currentPostShoot.priceType}
+                            {getPackagePriceTypeLabel(currentPostShoot.packageKey, currentPostShoot.priceType)}
                           </span>
                           <div className="flex items-baseline gap-2">
                             <span className="font-serif text-2xl sm:text-3xl font-bold text-gold">
-                              {currentPostShoot.priceLabel}
+                              {getPackagePriceLabel(currentPostShoot.packageKey, currentPostShoot.priceLabel)}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               (Duration: {currentPostShoot.duration})
@@ -1554,7 +1592,7 @@ export default function WeddingPhotographyPage() {
                 <span>Reliable Booking</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Secure your wedding date online using eSewa or Khalti with digital contract confirmation and prompt direct support.
+                Secure your wedding date online using eSewa with digital contract confirmation and prompt direct support.
               </p>
             </div>
           </div>

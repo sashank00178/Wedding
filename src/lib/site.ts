@@ -16,7 +16,8 @@ export const SITE = {
   since: "2015",
   footerNote:
     "Professional photography studio specializing in capturing life's most precious moments since 2015 in Nepal.",
-  copyright: "Capture Studios Nepal",
+  copyright:
+    "Capture Studios Nepal. All rights reserved to the developer of this website any reproduction or duplication of this website will lead to legal action.",
 } as const
 
 export type ServiceKey = "portrait" | "wedding"

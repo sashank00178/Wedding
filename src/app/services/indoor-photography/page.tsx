@@ -23,6 +23,42 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export default function IndoorPhotographyPage() {
+  const [packages, setPackages] = React.useState<
+    Record<string, { amount: number; priceDisplay: string; priceType: 'fixed' | 'advance' }>
+  >({})
+
+  React.useEffect(() => {
+    fetch('/api/packages')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data?.packages || [])
+        if (list.length > 0) {
+          const map: Record<string, { amount: number; priceDisplay: string; priceType: 'fixed' | 'advance' }> = {}
+          for (const p of list) {
+            map[p.packageKey] = {
+              amount: p.amount,
+              priceDisplay: p.priceDisplay,
+              priceType: (p.priceType === 'advance' ? 'advance' : 'fixed') as 'fixed' | 'advance',
+            }
+          }
+          setPackages(map)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const getPrice = (key: string, fallback: string) => {
+    const pkg = packages[key]
+    if (!pkg) return fallback
+    return `NPR ${pkg.amount.toLocaleString()}`
+  }
+
+  const getPriceTypeLabel = (key: string, fallbackType: 'fixed' | 'advance' = 'advance') => {
+    const pkg = packages[key]
+    const type = pkg?.priceType || fallbackType
+    return type === 'fixed' ? 'Fixed Rate' : 'Advance Price'
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Header />
@@ -206,10 +242,10 @@ export default function IndoorPhotographyPage() {
                   <div className="pt-4 border-t border-border mt-auto">
                     <div className="mb-4">
                       <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block">
-                        Advance Price
+                        {getPriceTypeLabel('indoor-couple-p1', 'advance')}
                       </span>
                       <span className="text-2xl font-bold text-gold">
-                        NPR 5,000
+                        {getPrice('indoor-couple-p1', 'NPR 5,000')}
                       </span>
                     </div>
 
@@ -293,10 +329,10 @@ export default function IndoorPhotographyPage() {
                   <div className="pt-4 border-t border-border mt-auto">
                     <div className="mb-4">
                       <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block">
-                        Advance Price
+                        {getPriceTypeLabel('indoor-couple-p2', 'advance')}
                       </span>
                       <span className="text-2xl font-bold text-gold">
-                        NPR 7,000
+                        {getPrice('indoor-couple-p2', 'NPR 7,000')}
                       </span>
                     </div>
 
@@ -405,10 +441,10 @@ export default function IndoorPhotographyPage() {
                 <div className="pt-4 border-t border-border mt-auto">
                   <div className="mb-4">
                     <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block">
-                      Advance Price
+                      {getPriceTypeLabel('indoor-family', 'advance')}
                     </span>
                     <span className="text-2xl font-bold text-gold">
-                      NPR 5,000
+                      {getPrice('indoor-family', 'NPR 5,000')}
                     </span>
                   </div>
 
@@ -480,7 +516,7 @@ export default function IndoorPhotographyPage() {
                       Complete Graduation Session
                     </span>
                     <span className="text-xs font-semibold text-muted-foreground">
-                      Fixed Studio Rate
+                      {getPriceTypeLabel('indoor-graduation', 'fixed')}
                     </span>
                   </div>
 
@@ -520,10 +556,10 @@ export default function IndoorPhotographyPage() {
                 <div className="pt-4 border-t border-border mt-auto">
                   <div className="mb-4">
                     <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block">
-                      Fixed Rate
+                      {getPriceTypeLabel('indoor-graduation', 'fixed')}
                     </span>
                     <span className="text-2xl font-bold text-gold">
-                      NPR 6,500
+                      {getPrice('indoor-graduation', 'NPR 6,500')}
                     </span>
                   </div>
 
@@ -641,10 +677,10 @@ export default function IndoorPhotographyPage() {
                   <div className="pt-4 border-t border-border mt-auto">
                     <div className="mb-4">
                       <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block">
-                        Price
+                        {getPriceTypeLabel('indoor-maternity-p1', 'fixed')}
                       </span>
                       <span className="text-2xl font-bold text-gold">
-                        NPR 15,000
+                        {getPrice('indoor-maternity-p1', 'NPR 15,000')}
                       </span>
                     </div>
 
@@ -711,10 +747,10 @@ export default function IndoorPhotographyPage() {
                   <div className="pt-4 border-t border-border mt-auto">
                     <div className="mb-4">
                       <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block">
-                        Price
+                        {getPriceTypeLabel('indoor-maternity-p2', 'fixed')}
                       </span>
                       <span className="text-2xl font-bold text-gold">
-                        NPR 10,000
+                        {getPrice('indoor-maternity-p2', 'NPR 10,000')}
                       </span>
                     </div>
 

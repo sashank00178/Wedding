@@ -116,6 +116,7 @@ const nextConfig: NextConfig = {
 
   // ── Allowed External Images ─────────────────────────────────────
   images: {
+    qualities: [75, 80],
     remotePatterns: [
       // Allow images from the gallery directory (local)
       {
@@ -123,6 +124,32 @@ const nextConfig: NextConfig = {
         hostname: "**",
       },
     ],
+  },
+
+  // ── Redirects for admin dashboard aliases ──────────────────────
+  async redirects() {
+    return [
+      {
+        source: '/dashboard',
+        destination: '/admin/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/admin-dashboard',
+        destination: '/admin/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/admindashboard',
+        destination: '/admin/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/admin/dashbord',
+        destination: '/admin/dashboard',
+        permanent: false,
+      },
+    ]
   },
 
   // ── Powered-by header removal ────────────────────────────────────

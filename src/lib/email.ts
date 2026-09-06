@@ -669,3 +669,177 @@ export async function sendTestEmail(to: string): Promise<EmailResult> {
     html: emailTemplate(bodyHtml, 'Test email'),
   })
 }
+
+// ── 9. Advance Booking Confirmation (Customer) ────────────────────
+
+export interface AdvanceBookingConfirmationData {
+  to: string
+  name: string
+  phone: string
+  service: string
+  date: string
+  advanceAmount: number
+  refId: string
+  transactionUuid: string
+}
+
+export async function sendAdvanceBookingConfirmation(
+  data: AdvanceBookingConfirmationData
+): Promise<EmailResult> {
+  const bodyHtml = `
+    <div style="text-align:center; margin-bottom:24px;">
+      <span style="display:inline-block; background-color:#28a745; color:#fff; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">
+        ✓ Advance Payment Verified
+      </span>
+      <h2 style="margin:16px 0 6px; color:#1a1a1a; font-size:24px; font-family:Georgia, serif;">
+        Your Spot is Guaranteed!
+      </h2>
+      <p style="margin:0; color:#666; font-size:15px;">
+        Dear ${data.name}, thank you for reserving your session with ${BRAND}.
+      </p>
+    </div>
+
+    <div style="background-color:#fafafa; border:1px solid #eaeaea; border-radius:8px; padding:20px; margin-bottom:20px;">
+      <h3 style="margin:0 0 14px; font-size:14px; color:#999; text-transform:uppercase; letter-spacing:1px;">
+        Booking &amp; Payment Summary
+      </h3>
+      <table cellpadding="0" cellspacing="0" style="width:100%; font-size:14px;">
+        <tr>
+          <td style="padding:6px 0; color:#666;">Service / Package:</td>
+          <td style="padding:6px 0; text-align:right; font-weight:600; color:#1a1a1a;">${data.service}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0; color:#666;">Reserved Date:</td>
+          <td style="padding:6px 0; text-align:right; font-weight:600; color:#1a1a1a;">${data.date}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0; color:#666;">Contact Phone:</td>
+          <td style="padding:6px 0; text-align:right; color:#1a1a1a;">${data.phone}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0; color:#666;">Payment Gateway:</td>
+          <td style="padding:6px 0; text-align:right; color:#1a1a1a;">eSewa (ePay v2)</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0; color:#666;">eSewa Ref ID:</td>
+          <td style="padding:6px 0; text-align:right; font-family:monospace; font-weight:700; color:#1a1a1a;">${data.refId}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0; color:#666;">Transaction UUID:</td>
+          <td style="padding:6px 0; text-align:right; font-family:monospace; font-size:12px; color:#888;">${data.transactionUuid}</td>
+        </tr>
+        <tr style="border-top:1px solid #ddd;">
+          <td style="padding:12px 0 0; color:#D4AF37; font-weight:700; font-size:16px;">Advance Deposit Paid:</td>
+          <td style="padding:12px 0 0; text-align:right; font-weight:700; font-size:18px; color:#D4AF37;">
+            NPR ${Number(data.advanceAmount).toLocaleString()}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="border-left:4px solid #D4AF37; padding:14px 18px; background-color:#fffdf5; border-radius:0 8px 8px 0; margin-bottom:20px;">
+      <p style="margin:0; color:#333; font-size:14px; line-height:1.6;">
+        <strong>Next Steps:</strong> Our photography crew has secured your calendar slot. We will contact you at <strong>${data.phone}</strong> or on WhatsApp to coordinate setup, timeline, and location details.
+      </p>
+    </div>
+
+    <p style="margin:0; color:#999; font-size:13px; text-align:center;">
+      Studio Location: New Road, Pokhara, Nepal &bull; Phone / WhatsApp: +977 9856010315
+    </p>
+  `
+
+  return sendEmail({
+    to: data.to,
+    subject: `Booking Confirmed — Advance Payment Received | ${BRAND}`,
+    html: emailTemplate(bodyHtml, `Booking Confirmed: ${data.service}`),
+  })
+}
+
+// ── 10. Advance Booking Admin Alert ───────────────────────────────
+
+export interface AdminAdvanceBookingData {
+  customerName: string
+  customerPhone: string
+  customerEmail: string
+  service: string
+  date: string
+  advanceAmount: number
+  refId: string
+  transactionUuid: string
+}
+
+export async function sendAdminAdvanceBookingNotification(
+  data: AdminAdvanceBookingData
+): Promise<EmailResult> {
+  if (!ADMIN_EMAIL) {
+    console.log('[EMAIL] ADMIN_EMAIL not set — skipping admin advance booking notification')
+    return { success: false, error: 'ADMIN_EMAIL not configured' }
+  }
+
+  const bodyHtml = `
+    <div style="margin-bottom:20px;">
+      <span style="display:inline-block; background-color:#28a745; color:#fff; padding:4px 12px; border-radius:14px; font-size:12px; font-weight:700; text-transform:uppercase;">
+        New Verified Advance Payment
+      </span>
+      <h2 style="margin:12px 0 6px; color:#1a1a1a; font-size:22px;">
+        Instant Spot Reserved via eSewa
+      </h2>
+      <p style="margin:0; color:#666; font-size:14px;">
+        A customer has completed an advance payment through eSewa ePay v2.
+      </p>
+    </div>
+
+    <div style="background-color:#f9f9f9; border-radius:8px; padding:18px; margin-bottom:20px;">
+      <table cellpadding="0" cellspacing="0" style="width:100%; font-size:14px;">
+        <tr>
+          <td style="padding:5px 0; color:#888;">Customer:</td>
+          <td style="padding:5px 0; text-align:right; font-weight:600;">${data.customerName}</td>
+        </tr>
+        <tr>
+          <td style="padding:5px 0; color:#888;">Phone:</td>
+          <td style="padding:5px 0; text-align:right; font-weight:600;">
+            <a href="tel:${data.customerPhone}" style="color:#D4AF37;">${data.customerPhone}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:5px 0; color:#888;">Email:</td>
+          <td style="padding:5px 0; text-align:right;">
+            <a href="mailto:${data.customerEmail}" style="color:#D4AF37;">${data.customerEmail}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:5px 0; color:#888;">Service:</td>
+          <td style="padding:5px 0; text-align:right; font-weight:600;">${data.service}</td>
+        </tr>
+        <tr>
+          <td style="padding:5px 0; color:#888;">Reserved Date:</td>
+          <td style="padding:5px 0; text-align:right; font-weight:600;">${data.date}</td>
+        </tr>
+        <tr>
+          <td style="padding:5px 0; color:#888;">eSewa Ref:</td>
+          <td style="padding:5px 0; text-align:right; font-family:monospace; font-weight:700;">${data.refId}</td>
+        </tr>
+        <tr>
+          <td style="padding:5px 0; color:#888;">Transaction UUID:</td>
+          <td style="padding:5px 0; text-align:right; font-family:monospace; font-size:12px;">${data.transactionUuid}</td>
+        </tr>
+        <tr style="border-top:1px solid #e0e0e0;">
+          <td style="padding:10px 0 0; color:#D4AF37; font-weight:700; font-size:16px;">Advance Deposit:</td>
+          <td style="padding:10px 0 0; text-align:right; font-weight:700; font-size:18px; color:#D4AF37;">
+            NPR ${Number(data.advanceAmount).toLocaleString()}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="margin:0; color:#888; font-size:13px;">
+      View full details in the Admin Dashboard under Bookings and Payments tabs.
+    </p>
+  `
+
+  return sendEmail({
+    to: ADMIN_EMAIL,
+    subject: `[Advance Paid] ${data.customerName} — NPR ${Number(data.advanceAmount).toLocaleString()} (${data.service})`,
+    html: emailTemplate(bodyHtml, `Advance payment received from ${data.customerName}`),
+  })
+}

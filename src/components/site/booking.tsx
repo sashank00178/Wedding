@@ -26,9 +26,11 @@ import {
 import { SERVICES, SITE, type ServiceInfo } from '@/lib/site'
 import { cn } from '@/lib/utils'
 import { WhatsAppIcon, STUDIO_WHATSAPP_PHONE } from '@/components/site/whatsapp-button'
+import { NepaliDatePicker } from '@/components/ui/nepali-date-picker'
+import { formatBsDate } from '@/lib/nepali-date'
 
 type TabMode = 'booking' | 'advance'
-type Gateway = 'esewa' | 'khalti'
+type Gateway = 'esewa'
 
 export type MainCategory = 'indoor' | 'wedding'
 export type WeddingSide = 'bride' | 'groom' | 'combo'
@@ -107,7 +109,7 @@ export const WEDDING_SUBCATEGORIES_BY_SIDE: Record<WeddingSide, WeddingSubCatego
     },
     {
       name: 'Mehendi',
-      packageKey: 'wedding-mehendi',
+      packageKey: 'wedding-mehendi-bride',
       priceDisplay: 'Price TBD (Deposit NPR 5,000)',
       advanceAmount: 5000,
       isTbd: true,
@@ -132,7 +134,7 @@ export const WEDDING_SUBCATEGORIES_BY_SIDE: Record<WeddingSide, WeddingSubCatego
   combo: [
     {
       name: 'Bride to Be',
-      packageKey: 'wedding-bride-to-be',
+      packageKey: 'wedding-bride-to-be-combo',
       priceDisplay: 'NPR 25,000',
       advanceAmount: 25000,
       description: 'Dedicated pre-wedding portraits & cinematic reels',
@@ -146,7 +148,7 @@ export const WEDDING_SUBCATEGORIES_BY_SIDE: Record<WeddingSide, WeddingSubCatego
     },
     {
       name: 'Mehendi',
-      packageKey: 'wedding-mehendi',
+      packageKey: 'wedding-mehendi-combo',
       priceDisplay: 'Price TBD (Deposit NPR 5,000)',
       advanceAmount: 5000,
       isTbd: true,
@@ -607,7 +609,7 @@ export function createBookingWhatsAppUrl(params: {
     `Email: ${params.email}`,
     `Phone: ${params.phone}`,
     `Service: ${params.service}`,
-    `Preferred Date: ${params.date}`,
+    `Preferred Date: ${formatBsDate(params.date, { showAd: true })}`,
   ]
 
   if (params.details && params.details.trim()) {
@@ -698,14 +700,111 @@ export function Booking() {
   const [bookingSubmittedWaUrl, setBookingSubmittedWaUrl] = React.useState<string | null>(null)
   const [paymentForm, setPaymentForm] = React.useState({
     name: '',
+    email: '',
     phone: '',
+    date: '',
     packageKey: 'wedding-combo-all',
   })
+
+  // Dynamic Package Prices from database
+  const [packagesData, setPackagesData] = React.useState<
+    Record<string, { amount: number; priceDisplay: string; isTbd: boolean; priceType: 'fixed' | 'advance' }>
+  >({})
+
+  React.useEffect(() => {
+    fetch('/api/packages')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data?.packages || [])
+        if (list.length > 0) {
+          const map: Record<string, { amount: number; priceDisplay: string; isTbd: boolean; priceType: 'fixed' | 'advance' }> = {}
+          for (const p of list) {
+            map[p.packageKey] = {
+              amount: p.amount,
+              priceDisplay: p.priceDisplay,
+              isTbd: Boolean(p.isTbd),
+              priceType: p.priceType === 'fixed' ? 'fixed' : 'advance',
+            }
+          }
+          // Backward-compatible alias mappings
+          if (map['wedding-mehendi-combo'] && !map['wedding-mehendi']) {
+            map['wedding-mehendi'] = map['wedding-mehendi-combo']
+          }
+          if (map['wedding-bride-to-be'] && !map['wedding-bride-to-be-combo']) {
+            map['wedding-bride-to-be-combo'] = map['wedding-bride-to-be']
+          }
+          setPackagesData(map)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const dynamicIndoorOptions: IndoorCategoryItem[] = React.useMemo(() => {
+    return INDOOR_CATEGORY_OPTIONS.map((cat) => {
+      const updatedTiers = cat.tiers.map((tier) => {
+        const live = packagesData[tier.packageKey]
+        if (!live) return tier
+        return {
+          ...tier,
+          advanceAmount: live.amount,
+          priceDisplay: live.priceDisplay,
+        }
+      })
+      const minPrice = Math.min(...updatedTiers.map((t) => t.advanceAmount))
+      const priceDisplay =
+        updatedTiers.length > 1
+          ? `From NPR ${minPrice.toLocaleString()}`
+          : `NPR ${minPrice.toLocaleString()}`
+      return {
+        ...cat,
+        priceDisplay,
+        tiers: updatedTiers,
+      }
+    })
+  }, [packagesData])
+
+  const dynamicWeddingSubcategories: Record<WeddingSide, WeddingSubCategoryItem[]> = React.useMemo(() => {
+    const result: Record<WeddingSide, WeddingSubCategoryItem[]> = {
+      bride: [],
+      groom: [],
+      combo: [],
+    }
+    for (const side of ['bride', 'groom', 'combo'] as WeddingSide[]) {
+      result[side] = (WEDDING_SUBCATEGORIES_BY_SIDE[side] || []).map((item) => {
+        const live = packagesData[item.packageKey]
+        if (!live) return item
+        return {
+          ...item,
+          advanceAmount: live.amount,
+          priceDisplay: live.priceDisplay,
+          isTbd: live.isTbd,
+        }
+      })
+    }
+    return result
+  }, [packagesData])
+
+  const dynamicWeddingSideOptions = React.useMemo(() => {
+    return WEDDING_SIDE_OPTIONS.map((side) => {
+      const subcats = dynamicWeddingSubcategories[side.id] || []
+      const pricedItems = subcats.filter((s) => !s.isTbd && s.advanceAmount > 0)
+      const minPrice =
+        pricedItems.length > 0 ? Math.min(...pricedItems.map((s) => s.advanceAmount)) : 0
+      const subtitle =
+        minPrice > 0
+          ? `${subcats.length} Event Options • From NPR ${minPrice.toLocaleString()}`
+          : `${subcats.length} Event Options`
+      return {
+        ...side,
+        subtitle,
+      }
+    })
+  }, [dynamicWeddingSubcategories])
 
   // Compute live selection details, validation state, and pricing
   const currentSelectionDetails = React.useMemo(() => {
     if (mainCategory === 'indoor' && indoorCategory) {
-      const cat = INDOOR_CATEGORY_OPTIONS.find((c) => c.id === indoorCategory)
+      const cat = dynamicIndoorOptions.find((c) => c.id === indoorCategory)
       if (!cat) return null
       const tier = cat.tiers.find((t) => t.id === indoorTier) || cat.tiers[0]
       const tierSuffix =
@@ -727,8 +826,8 @@ export function Booking() {
     }
 
     if (mainCategory === 'wedding' && weddingSide && weddingEvent) {
-      const sideObj = WEDDING_SIDE_OPTIONS.find((s) => s.id === weddingSide)
-      const list = WEDDING_SUBCATEGORIES_BY_SIDE[weddingSide] || []
+      const sideObj = dynamicWeddingSideOptions.find((s) => s.id === weddingSide)
+      const list = dynamicWeddingSubcategories[weddingSide] || []
       const evt = list.find((e) => e.name === weddingEvent)
       if (!evt) return null
       const fullServiceLabel = `Wedding Photography — ${sideObj?.name || weddingSide} — ${evt.name}`
@@ -746,7 +845,7 @@ export function Booking() {
     }
 
     return null
-  }, [mainCategory, indoorCategory, indoorTier, weddingSide, weddingEvent])
+  }, [mainCategory, indoorCategory, indoorTier, weddingSide, weddingEvent, dynamicIndoorOptions, dynamicWeddingSideOptions, dynamicWeddingSubcategories])
 
   // Synchronize selection changes with form state
   React.useEffect(() => {
@@ -793,20 +892,24 @@ export function Booking() {
       .catch(() => {})
   }, [])
 
-  // Sync Name and Phone between forms if empty to save user effort
+  // Sync Name, Email, Phone, and Date between forms if empty to save user effort
   const handleTabChange = React.useCallback((tab: TabMode, broadcast = true) => {
     if (tab === 'advance') {
       setPaymentForm((prev) => ({
         ...prev,
         name: prev.name || bookingForm.name,
+        email: prev.email || bookingForm.email,
         phone: prev.phone || bookingForm.phone,
+        date: prev.date || bookingForm.date,
         packageKey: currentSelectionDetails?.packageKey || prev.packageKey,
       }))
     } else if (tab === 'booking') {
       setBookingForm((prev) => ({
         ...prev,
         name: prev.name || paymentForm.name,
+        email: prev.email || paymentForm.email,
         phone: prev.phone || paymentForm.phone,
+        date: prev.date || paymentForm.date,
         service: currentSelectionDetails?.fullServiceLabel || prev.service,
       }))
     }
@@ -819,7 +922,17 @@ export function Booking() {
       const targetHash = tab === 'advance' ? '#advance-booking' : '#booking'
       history.replaceState(null, '', targetHash)
     }
-  }, [bookingForm.name, bookingForm.phone, currentSelectionDetails, paymentForm.name, paymentForm.phone])
+  }, [
+    bookingForm.name,
+    bookingForm.email,
+    bookingForm.phone,
+    bookingForm.date,
+    currentSelectionDetails,
+    paymentForm.name,
+    paymentForm.email,
+    paymentForm.phone,
+    paymentForm.date,
+  ])
 
   // Sync URL parameters, hash, and custom navigation events
   React.useEffect(() => {
@@ -891,16 +1004,30 @@ export function Booking() {
   // Current package selected for payment
   const selectedPkg = React.useMemo(() => {
     if (currentSelectionDetails?.isValid) {
+      const livePkg = packagesData[currentSelectionDetails.packageKey]
       return {
         key: currentSelectionDetails.packageKey,
         label: currentSelectionDetails.fullServiceLabel,
         amount: currentSelectionDetails.advanceAmount,
         priceDisplay: currentSelectionDetails.priceDisplay,
         isTbd: currentSelectionDetails.isTbd,
+        priceType: livePkg?.priceType || 'advance',
       }
     }
 
+    const livePkg = packagesData[paymentForm.packageKey]
     const matchedOption = ADVANCE_PACKAGE_OPTIONS.find((p) => p.key === paymentForm.packageKey)
+    if (livePkg) {
+      return {
+        key: paymentForm.packageKey,
+        label: matchedOption?.label || paymentForm.packageKey,
+        amount: livePkg.amount,
+        priceDisplay: livePkg.priceDisplay,
+        isTbd: livePkg.isTbd,
+        priceType: livePkg.priceType,
+      }
+    }
+
     if (matchedOption) {
       return {
         key: matchedOption.key,
@@ -908,6 +1035,7 @@ export function Booking() {
         amount: matchedOption.amount,
         priceDisplay: matchedOption.priceLabel,
         isTbd: false,
+        priceType: 'advance',
       }
     }
 
@@ -917,8 +1045,9 @@ export function Booking() {
       amount: 50000,
       priceDisplay: 'NPR 50,000',
       isTbd: false,
+      priceType: 'fixed',
     }
-  }, [currentSelectionDetails, paymentForm.packageKey])
+  }, [currentSelectionDetails, paymentForm.packageKey, packagesData])
 
   // Submit standard booking
   const onBookingSubmit = async (e: React.FormEvent) => {
@@ -1023,6 +1152,11 @@ export function Booking() {
       return
     }
 
+    if (!paymentForm.date) {
+      toast.error('Please select your preferred event or session date.')
+      return
+    }
+
     if (!currentSelectionDetails?.isValid) {
       toast.error('Please complete your service selection before proceeding with payment.')
       return
@@ -1047,6 +1181,9 @@ export function Booking() {
           packageName: selectedPkg.label,
           customerName: paymentForm.name,
           customerPhone: paymentForm.phone,
+          customerEmail: paymentForm.email,
+          bookingDate: paymentForm.date,
+          serviceDetails: serviceBreadcrumb,
         }),
       })
       const data = await resp.json()
@@ -1057,7 +1194,32 @@ export function Booking() {
         return
       }
 
-      // Generate pre-filled WhatsApp link for advance booking
+      // eSewa v2 official checkout redirect:
+      // Submits HMAC-SHA256 signed payload via form POST to eSewa checkout URL
+      if (gateway === 'esewa' && data.formData && data.payment_url) {
+        toast.info('Redirecting to official eSewa checkout...', { duration: 4000 })
+        const form = document.createElement('form')
+        form.method = 'POST'
+        form.action = data.payment_url
+        for (const [key, val] of Object.entries(data.formData)) {
+          const input = document.createElement('input')
+          input.type = 'hidden'
+          input.name = key
+          input.value = String(val)
+          form.appendChild(input)
+        }
+        document.body.appendChild(form)
+        form.submit()
+        return
+      }
+
+      // Direct payment URL redirect if returned
+      if (data.payment_url) {
+        window.location.href = data.payment_url
+        return
+      }
+
+      // Fallback if demo or simulated response
       const refId = data.transactionUuid || data.pidx || `ADV-${Date.now().toString().slice(-6)}`
       const waUrl = createAdvanceBookingWhatsAppUrl({
         name: paymentForm.name,
@@ -1069,17 +1231,11 @@ export function Booking() {
         totalPrice: selectedPkg.priceDisplay,
       })
 
-      // Auto-open WhatsApp in a new tab
-      if (typeof window !== 'undefined') {
-        window.open(waUrl, '_blank', 'noopener,noreferrer')
-      }
-
-      // DEMO MODE — no real gateway redirect
       if (data.demo) {
         await new Promise((r) => setTimeout(r, 600))
         setPaymentSuccess({
           gateway,
-          amount: Number(data.amount),
+          amount: Number(data.amount || selectedPkg.amount),
           ref: refId,
           waUrl,
         })
@@ -1091,8 +1247,6 @@ export function Booking() {
             onClick: () => window.open(waUrl, '_blank', 'noopener,noreferrer'),
           },
         })
-      } else if (data.payment_url) {
-        window.location.href = data.payment_url
       }
     } catch (err) {
       console.error(err)
@@ -1167,7 +1321,7 @@ export function Booking() {
                 </p>
               </div>
               <div className="pt-2 text-[11px] text-muted-foreground border-t border-border">
-                Advance payments secured via <span className="font-semibold text-foreground">eSewa</span> &amp; <span className="font-semibold text-foreground">Khalti</span>
+                Advance payments secured via <span className="font-semibold text-foreground">eSewa Official Gateway</span>
               </div>
             </div>
           </div>
@@ -1303,15 +1457,15 @@ export function Booking() {
 
                     <div className="space-y-1">
                       <Label htmlFor="booking-date" className="text-xs font-medium text-foreground/80">
-                        Preferred Date <span className="text-destructive">*</span>
+                        Preferred Date (BS) <span className="text-destructive">*</span>
                       </Label>
-                      <Input
+                      <NepaliDatePicker
                         id="booking-date"
-                        type="date"
                         value={bookingForm.date}
-                        onChange={(e) => updateBooking('date', e.target.value)}
+                        onChange={(adDate) => updateBooking('date', adDate)}
+                        minDate="today"
                         required
-                        className="h-9 text-xs"
+                        placeholder="Select photoshoot date (BS)"
                       />
                     </div>
 
@@ -1341,7 +1495,7 @@ export function Booking() {
                         weddingSide={weddingSide}
                         setWeddingSide={(side) => {
                           setWeddingSide(side)
-                          const list = WEDDING_SUBCATEGORIES_BY_SIDE[side] || []
+                          const list = dynamicWeddingSubcategories[side] || []
                           if (!list.some((e) => e.name === weddingEvent)) {
                             setWeddingEvent(list[0]?.name || 'All Included')
                           }
@@ -1349,6 +1503,9 @@ export function Booking() {
                         weddingEvent={weddingEvent}
                         setWeddingEvent={setWeddingEvent}
                         selectionDetails={currentSelectionDetails}
+                        indoorCategoryOptions={dynamicIndoorOptions}
+                        weddingSubcategoriesBySide={dynamicWeddingSubcategories}
+                        weddingSideOptions={dynamicWeddingSideOptions}
                       />
                     </div>
 
@@ -1397,23 +1554,21 @@ export function Booking() {
                   />
                   ) : (
                     <form onSubmit={onPaymentSubmit} className="space-y-4">
-                      {/* Wallet Gateway Selector */}
-                      <div className="grid grid-cols-2 gap-2.5 p-1.5 bg-secondary/60 border border-border rounded-xl">
-                        <GatewayTab
-                          active={gateway === 'esewa'}
-                          onClick={() => setGateway('esewa')}
-                          color="#60bb46"
-                          label="eSewa Wallet"
-                        />
-                        <GatewayTab
-                          active={gateway === 'khalti'}
-                          onClick={() => setGateway('khalti')}
-                          color="#5c2d91"
-                          label="Khalti Wallet"
-                        />
+                      {/* Payment Method Display */}
+                      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#60bb46]/10 border border-[#60bb46]/30 rounded-xl">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#60bb46] animate-pulse" />
+                          <div>
+                            <span className="text-xs font-bold text-foreground">eSewa Official Checkout</span>
+                            <p className="text-[10px] text-muted-foreground">Secured instant online payment via eSewa ePay</p>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-semibold text-[#60bb46] bg-white/70 dark:bg-black/50 px-2.5 py-0.5 rounded border border-[#60bb46]/20">
+                          eSewa ePay v2
+                        </span>
                       </div>
 
-                      {/* Contact Fields */}
+                      {/* Contact & Date Fields */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div className="space-y-1">
                           <Label htmlFor="pay-name" className="text-xs font-medium text-foreground/80">
@@ -1440,6 +1595,32 @@ export function Booking() {
                             required
                             placeholder="+977 98XXXXXXXX"
                             className="h-9 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="pay-email" className="text-xs font-medium text-foreground/80">
+                            Email Address <span className="text-muted-foreground font-normal">(for receipt)</span>
+                          </Label>
+                          <Input
+                            id="pay-email"
+                            type="email"
+                            value={paymentForm.email}
+                            onChange={(e) => updatePayment('email', e.target.value)}
+                            placeholder="you@example.com"
+                            className="h-9 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="pay-date" className="text-xs font-medium text-foreground/80">
+                            Event / Session Date (BS) <span className="text-destructive">*</span>
+                          </Label>
+                          <NepaliDatePicker
+                            id="pay-date"
+                            value={paymentForm.date}
+                            onChange={(adDate) => updatePayment('date', adDate)}
+                            minDate="today"
+                            required
+                            placeholder="Select photoshoot date (BS)"
                           />
                         </div>
                       </div>
@@ -1469,7 +1650,7 @@ export function Booking() {
                         weddingSide={weddingSide}
                         setWeddingSide={(side) => {
                           setWeddingSide(side)
-                          const list = WEDDING_SUBCATEGORIES_BY_SIDE[side] || []
+                          const list = dynamicWeddingSubcategories[side] || []
                           if (!list.some((e) => e.name === weddingEvent)) {
                             setWeddingEvent(list[0]?.name || 'All Included')
                           }
@@ -1477,13 +1658,18 @@ export function Booking() {
                         weddingEvent={weddingEvent}
                         setWeddingEvent={setWeddingEvent}
                         selectionDetails={currentSelectionDetails}
+                        indoorCategoryOptions={dynamicIndoorOptions}
+                        weddingSubcategoriesBySide={dynamicWeddingSubcategories}
+                        weddingSideOptions={dynamicWeddingSideOptions}
                       />
 
-                      {/* Advance Amount Display */}
+                      {/* Advance / Fixed Amount Display */}
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="pay-amount" className="text-xs font-medium text-foreground/80">
-                            Advance Deposit Required (NPR)
+                            {selectedPkg.priceType === 'fixed'
+                              ? 'Fixed Price / Full Rate (NPR)'
+                              : 'Advance Deposit Required (NPR)'}
                           </Label>
                           {selectedPkg.isTbd && (
                             <span className="text-[10px] text-amber-500 font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
@@ -1502,19 +1688,16 @@ export function Booking() {
                       <Button
                         type="submit"
                         disabled={paymentSubmitting}
-                        className={cn(
-                          'w-full h-10 font-semibold text-white border-0 transition-all text-xs uppercase tracking-wider active:scale-95 shadow-sm',
-                          gateway === 'esewa'
-                            ? 'bg-[#60bb46] hover:bg-[#54a93d]'
-                            : 'bg-[#5c2d91] hover:bg-[#4a2475]'
-                        )}
+                        className="w-full h-10 font-semibold text-white border-0 bg-[#60bb46] hover:bg-[#54a93d] transition-all text-xs uppercase tracking-wider active:scale-95 shadow-sm"
                       >
                         {paymentSubmitting ? (
                           <>
                             <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Processing...
                           </>
+                        ) : selectedPkg.priceType === 'fixed' ? (
+                          `Pay Fixed NPR ${selectedPkg.amount.toLocaleString()} with eSewa`
                         ) : (
-                          `Pay NPR ${selectedPkg.amount.toLocaleString()} with ${gateway === 'esewa' ? 'eSewa' : 'Khalti'}`
+                          `Pay NPR ${selectedPkg.amount.toLocaleString()} with eSewa`
                         )}
                       </Button>
                     </form>
@@ -1546,6 +1729,9 @@ function MultiLevelCategorySelector({
   weddingEvent,
   setWeddingEvent,
   selectionDetails,
+  indoorCategoryOptions,
+  weddingSubcategoriesBySide,
+  weddingSideOptions,
 }: {
   idPrefix: string
   mode: 'booking' | 'advance'
@@ -1569,11 +1755,16 @@ function MultiLevelCategorySelector({
     isTbd: boolean
     isValid: boolean
   } | null
+  indoorCategoryOptions?: IndoorCategoryItem[]
+  weddingSubcategoriesBySide?: Record<WeddingSide, WeddingSubCategoryItem[]>
+  weddingSideOptions?: typeof WEDDING_SIDE_OPTIONS
 }) {
-  const selectedIndoorOption = INDOOR_CATEGORY_OPTIONS.find((c) => c.id === indoorCategory)
+  const indoorList = indoorCategoryOptions || INDOOR_CATEGORY_OPTIONS
+  const selectedIndoorOption = indoorList.find((c) => c.id === indoorCategory)
   const weddingSubCategories = weddingSide
-    ? WEDDING_SUBCATEGORIES_BY_SIDE[weddingSide] || []
+    ? (weddingSubcategoriesBySide || WEDDING_SUBCATEGORIES_BY_SIDE)[weddingSide] || []
     : []
+  const sideOptions = weddingSideOptions || WEDDING_SIDE_OPTIONS
 
   return (
     <div className="space-y-3 p-3.5 sm:p-4 rounded-xl bg-secondary/35 border border-border/80 transition-all">
@@ -1652,7 +1843,7 @@ function MultiLevelCategorySelector({
                 <SelectValue placeholder="Select an indoor session type..." />
               </SelectTrigger>
               <SelectContent>
-                {INDOOR_CATEGORY_OPTIONS.map((opt) => (
+                {indoorList.map((opt) => (
                   <SelectItem key={opt.id} value={opt.id} className="text-xs py-2">
                     <div className="flex items-center justify-between w-full gap-4">
                       <span className="font-medium text-foreground">{opt.name}</span>
@@ -1719,7 +1910,7 @@ function MultiLevelCategorySelector({
                 <SelectValue placeholder="Choose a Side (Bride Side / Groom Side / Combo)..." />
               </SelectTrigger>
               <SelectContent>
-                {WEDDING_SIDE_OPTIONS.map((side) => (
+                {sideOptions.map((side) => (
                   <SelectItem key={side.id} value={side.id} className="text-xs py-2">
                     <div className="flex items-center justify-between w-full gap-4">
                       <span className="font-medium text-foreground">{side.name}</span>
@@ -1832,33 +2023,7 @@ function MultiLevelCategorySelector({
   )
 }
 
-function GatewayTab({
-  active,
-  onClick,
-  color,
-  label,
-}: {
-  active: boolean
-  onClick: () => void
-  color: string
-  label: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'flex items-center justify-center py-3 rounded-lg border-2 font-semibold transition-all',
-        active
-          ? 'border-current bg-background shadow-sm'
-          : 'border-border bg-background/50 text-muted-foreground hover:bg-background'
-      )}
-      style={active ? { color } : undefined}
-    >
-      <span className="text-xs sm:text-sm font-bold">{label}</span>
-    </button>
-  )
-}
+
 
 function SuccessCard({
   gateway,

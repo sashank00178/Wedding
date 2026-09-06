@@ -9,8 +9,12 @@ import {
   type GalleryCategory,
 } from '@/lib/site'
 import { getDynamicGalleryPhotos, getDynamicHeroImages } from '@/lib/gallery-loader'
+import { INITIAL_PACKAGES } from '@/lib/packages-data'
 
-export async function ensureInitialData() {
+let hasInitialized = false
+
+export async function ensureInitialData(force = false) {
+  if (hasInitialized && !force) return
   try {
     // 1. Ensure Admin User
     const adminEmail = process.env.ADMIN_EMAIL || 'weddingmomentpkr@gmail.com'
@@ -46,7 +50,6 @@ export async function ensureInitialData() {
         mapEmbedUrl: SITE.mapEmbedUrl,
         since: SITE.since,
         footerNote: SITE.footerNote,
-        copyright: SITE.copyright,
       }
 
       for (const [key, value] of Object.entries(initialSettings)) {
@@ -69,6 +72,11 @@ export async function ensureInitialData() {
         update: { value: SITE.mapEmbedUrl },
       })
     }
+
+    // Ensure copyright notice is removed from dynamic DB settings (developer fixed only)
+    await db.siteSetting.deleteMany({
+      where: { key: 'copyright' },
+    })
 
     // 3. Ensure Services
     const servicesCount = await db.studioService.count()
@@ -226,6 +234,51 @@ export async function ensureInitialData() {
         },
       })
     }
+
+    // 7. Ensure Package Prices
+    const packagesCount = await db.packagePrice.count()
+    if (packagesCount === 0) {
+      for (const p of INITIAL_PACKAGES) {
+        await db.packagePrice.create({
+          data: {
+            packageKey: p.packageKey,
+            category: p.category,
+            subCategory: p.subCategory,
+            name: p.name,
+            description: p.description,
+            priceType: p.priceType,
+            amount: p.amount,
+            priceDisplay: p.priceDisplay,
+            isTbd: p.isTbd || false,
+            order: p.order,
+          },
+        })
+      }
+    } else {
+      // Upsert any missing packages from INITIAL_PACKAGES
+      for (const p of INITIAL_PACKAGES) {
+        const existing = await db.packagePrice.findUnique({
+          where: { packageKey: p.packageKey },
+        })
+        if (!existing) {
+          await db.packagePrice.create({
+            data: {
+              packageKey: p.packageKey,
+              category: p.category,
+              subCategory: p.subCategory,
+              name: p.name,
+              description: p.description,
+              priceType: p.priceType,
+              amount: p.amount,
+              priceDisplay: p.priceDisplay,
+              isTbd: p.isTbd || false,
+              order: p.order,
+            },
+          })
+        }
+      }
+    }
+    hasInitialized = true
   } catch (error) {
     console.error('Error seeding initial studio data:', error)
   }
@@ -234,12 +287,13 @@ export async function ensureInitialData() {
 export async function getFullSiteData() {
   await ensureInitialData()
 
-  const [settings, services, gallery, hours, socialLinks] = await Promise.all([
+  const [settings, services, gallery, hours, socialLinks, packages] = await Promise.all([
     db.siteSetting.findMany(),
     db.studioService.findMany({ orderBy: { order: 'asc' } }),
     db.galleryPhoto.findMany({ orderBy: { order: 'asc' } }),
     db.studioHour.findMany({ orderBy: { order: 'asc' } }),
     db.socialLink.findMany({ orderBy: { order: 'asc' } }),
+    db.packagePrice.findMany({ orderBy: { order: 'asc' } }),
   ])
 
   const settingsMap: Record<string, string> = {}
@@ -263,7 +317,7 @@ export async function getFullSiteData() {
         : SITE.mapEmbedUrl,
     since: settingsMap.since || SITE.since,
     footerNote: settingsMap.footerNote || SITE.footerNote,
-    copyright: settingsMap.copyright || SITE.copyright,
+    copyright: SITE.copyright,
   }
 
   const dynamicPhotos = getDynamicGalleryPhotos()
@@ -320,5 +374,12 @@ export async function getFullSiteData() {
     hours: hours.length > 0 ? hours : STUDIO_HOURS,
     socialLinks: socialLinks.length > 0 ? socialLinks : SOCIAL_LINKS,
     heroImages: getDynamicHeroImages(),
+    packages: packages.length > 0 ? packages : INITIAL_PACKAGES,
   }
+}
+
+export async function getPackagePrices() {
+  await ensureInitialData()
+  const packages = await db.packagePrice.findMany({ orderBy: { order: 'asc' } })
+  return packages.length > 0 ? packages : INITIAL_PACKAGES
 }
