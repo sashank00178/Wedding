@@ -55,7 +55,7 @@ function formatTitleFromFilename(filename: string, category: GalleryCategory): s
   if (lower.includes('family')) {
     return 'Heirloom Family Studio Portrait'
   }
-  if (lower.includes('graduation')) {
+  if (lower.includes('graduation') || lower.includes('dsc04212')) {
     return 'Academic Milestone Graduation'
   }
   if (lower.includes('maternity')) {
@@ -89,7 +89,7 @@ function formatSubcategoryFromFilename(filename: string, category: GalleryCatego
 
   if (category === 'portrait') {
     if (lower.includes('family')) return 'family'
-    if (lower.includes('graduation')) return 'graduation'
+    if (lower.includes('graduation') || lower.includes('dsc04212')) return 'graduation'
     if (lower.includes('maternity')) return 'maternity'
     if (lower.includes('couple') || lower.includes('couplepotrait') || lower.includes('potrait') || lower.includes('portrait')) {
       return 'couplepre-wedding'
@@ -118,7 +118,7 @@ function formatDescriptionFromFilename(filename: string, category: GalleryCatego
   if (lower.includes('family')) {
     return 'Cherished multi-generational studio family portrait with timeless warmth and gentle illumination.'
   }
-  if (lower.includes('graduation')) {
+  if (lower.includes('graduation') || lower.includes('dsc04212')) {
     return 'Celebrating academic milestone achievements with formal regalia, cap, gown, and genuine pride.'
   }
   if (lower.includes('maternity')) {

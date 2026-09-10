@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Camera, HeartHandshake } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Section, SectionTitle } from '@/components/site/section'
 import { type GalleryItem } from '@/lib/site'
 import { cn } from '@/lib/utils'
@@ -11,11 +11,8 @@ import { cn } from '@/lib/utils'
 interface CategoryCard {
   title: string
   subtitle: string
-  eyebrow: string
   href: string
   imageSrc: string
-  countFallback: number
-  icon: React.ReactNode
 }
 
 export function Gallery() {
@@ -31,16 +28,6 @@ export function Gallery() {
       })
       .catch(() => {})
   }, [])
-
-  const indoorCount = React.useMemo(() => {
-    const count = galleryItems.filter((item) => item.category === 'portrait').length
-    return count > 0 ? count : 9
-  }, [galleryItems])
-
-  const weddingCount = React.useMemo(() => {
-    const count = galleryItems.filter((item) => item.category === 'wedding').length
-    return count > 0 ? count : 6
-  }, [galleryItems])
 
   // Pick top representative featured photo from indoor collection
   const indoorFeatured = React.useMemo(() => {
@@ -63,21 +50,15 @@ export function Gallery() {
       title: 'Indoor Photo Shoots',
       subtitle:
         'Explore our indoor photography collection — fine-art portraits, graduation milestones, couple sessions, and intimate studio moments.',
-      eyebrow: 'Studio & Fine Art',
       href: '/gallery?category=indoor',
       imageSrc: indoorFeatured,
-      countFallback: indoorCount,
-      icon: <Camera className="h-4 w-4" />,
     },
     {
       title: 'Wedding Photo Shoots',
       subtitle:
         'Explore our wedding photography collection — sacred ceremonial rituals, radiant bridal moments, mehendi joy, and grand receptions.',
-      eyebrow: 'Ceremonial Stories',
       href: '/gallery?category=wedding',
       imageSrc: weddingFeatured,
-      countFallback: weddingCount,
-      icon: <HeartHandshake className="h-4 w-4" />,
     },
   ]
 
@@ -113,39 +94,29 @@ export function Gallery() {
                 />
 
                 {/* Subtle dark vignette & bottom gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 transition-opacity duration-300 group-hover:from-black/95 group-hover:via-black/50" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/95 group-hover:via-black/60 transition-all duration-500" />
 
-                {/* Top Category Badge */}
-                <div className="absolute top-4 left-4 sm:top-5 sm:left-5 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-gold/40 text-gold text-xs font-semibold tracking-wide shadow-sm">
-                    {cat.icon}
-                    {cat.eyebrow}
-                  </span>
-                </div>
-
-                {/* Photo Count Pill */}
-                <div className="absolute top-4 right-4 sm:top-5 sm:right-5">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-white/90 text-xs font-medium border border-white/10 shadow-sm">
-                    {cat.countFallback} Photos
-                  </span>
-                </div>
-
-                {/* Bottom Details & Hover CTA */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-white">
-                  <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight group-hover:text-gold transition-colors duration-300">
+                {/* Bottom Details - Only title visible by default; description & CTA expand on hover */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-white flex flex-col justify-end">
+                  <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight group-hover:text-gold transition-colors duration-300 drop-shadow-sm">
                     {cat.title}
                   </h3>
 
-                  <p className="text-xs sm:text-sm text-white/85 mt-2 line-clamp-2 leading-relaxed max-w-xl">
-                    {cat.subtitle}
-                  </p>
+                  {/* Description & CTA hidden by default — smoothly expands and fades in on hover */}
+                  <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-500 ease-out">
+                    <div className="overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out">
+                      <p className="text-xs sm:text-sm text-white/90 pt-3 line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-xl">
+                        {cat.subtitle}
+                      </p>
 
-                  {/* Interactive View Gallery CTA Bar */}
-                  <div className="mt-5 flex items-center gap-2 text-xs sm:text-sm font-semibold text-gold tracking-wide">
-                    <span className="underline-offset-4 group-hover:underline">
-                      View Gallery
-                    </span>
-                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
+                      {/* Interactive View Gallery CTA */}
+                      <div className="mt-3.5 flex items-center gap-2 text-xs sm:text-sm font-semibold text-gold tracking-wide">
+                        <span className="underline-offset-4 group-hover:underline">
+                          View Gallery
+                        </span>
+                        <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

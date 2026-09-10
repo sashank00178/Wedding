@@ -323,18 +323,6 @@ function GalleryContent() {
                     {/* Gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity" />
 
-                    {/* Category & Subcategory pills */}
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5 flex-wrap justify-end">
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-sm text-gold border border-gold/40">
-                        {GALLERY_CATEGORY_LABELS[photo.category] || photo.category}
-                      </span>
-                      {photo.subcategory && (
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-gold text-black shadow-sm">
-                          {GALLERY_SUBCATEGORY_LABELS[photo.subcategory] || photo.subcategory}
-                        </span>
-                      )}
-                    </div>
-
                     {/* Quick zoom icon */}
                     <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="h-7 w-7 rounded-full bg-black/60 text-white flex items-center justify-center">

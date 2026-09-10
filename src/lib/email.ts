@@ -416,6 +416,51 @@ export async function sendPasswordReset(data: PasswordResetData): Promise<EmailR
   })
 }
 
+// ── 3b. Admin Password Reset OTP (Verification Code) ────────────────
+
+export interface PasswordResetOtpData {
+  to: string
+  name: string
+  code: string
+}
+
+export async function sendPasswordResetOtp(data: PasswordResetOtpData): Promise<EmailResult> {
+  const bodyHtml = `
+    <h2 style="margin:0 0 8px; color:#111; font-size:22px;">Password Reset Verification Code</h2>
+    <p style="margin:0 0 20px; color:#555; font-size:15px; line-height:1.6;">
+      Hello ${data.name},<br />
+      We received a request to reset the password for your administrator account on <strong>${BRAND}</strong>.
+    </p>
+
+    <div style="background-color:#fffdf5; border:1px solid #d4af37; border-radius:8px; padding:24px; text-align:center; margin:24px 0;">
+      <p style="margin:0 0 10px; color:#888; font-size:13px; text-transform:uppercase; letter-spacing:1.5px; font-weight:600;">
+        Verification Code
+      </p>
+      <div style="display:inline-block; background-color:#111; color:#D4AF37; padding:12px 28px; border-radius:8px; font-family:'Courier New', Courier, monospace; font-size:32px; font-weight:700; letter-spacing:8px;">
+        ${data.code}
+      </div>
+      <p style="margin:16px 0 0; color:#222; font-size:15px; font-weight:600;">
+        Your password reset code is: <span style="color:#D4AF37;">${data.code}</span>. This code expires in 10 minutes.
+      </p>
+    </div>
+
+    <div style="margin-top:24px; padding-top:16px; border-top:1px solid #eee;">
+      <p style="margin:0 0 6px; color:#777; font-size:13px;">
+        Enter this 6-digit code in the admin portal to proceed with choosing your new password.
+      </p>
+      <p style="margin:0; color:#999; font-size:12px;">
+        If you did not request this code, please secure your account immediately or ignore this email.
+      </p>
+    </div>
+  `
+
+  return sendEmail({
+    to: data.to,
+    subject: `Your Password Reset Code: ${data.code} — ${BRAND}`,
+    html: emailTemplate(bodyHtml, `Your password reset code is: ${data.code}`),
+  })
+}
+
 // ── 4. Payment Failed Notification ──────────────────────────────────
 
 export interface PaymentFailedData {

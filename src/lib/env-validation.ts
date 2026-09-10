@@ -64,6 +64,13 @@ const ENV_SPECS: EnvVarSpec[] = [
     description: 'Admin email for notifications (optional, defaults to EMAIL_FROM)',
     example: 'admin@weddingmomentnepal.com',
   },
+  {
+    name: 'ADMIN_RECOVERY_PIN_HASH',
+    required: false,
+    requiredDev: false,
+    description: 'Bcrypt hash of the owner secret recovery PIN for admin password resets',
+    example: '$2b$10$... (generate via: npm run hash-pin <your-pin>)',
+  },
 ]
 
 export interface ValidationResult {

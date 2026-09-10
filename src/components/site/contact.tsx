@@ -11,7 +11,6 @@ import { toast } from 'sonner'
 import { Loader2, ExternalLink } from 'lucide-react'
 import { SITE } from '@/lib/site'
 import { SocialLinks } from '@/components/site/social-links'
-import { WhatsAppButton } from '@/components/site/whatsapp-button'
 
 export function Contact() {
   const [site, setSite] = React.useState(SITE)
@@ -63,27 +62,6 @@ export function Contact() {
     }
   }
 
-  const emailSubject = encodeURIComponent(`Photography Inquiry - ${site.brand}`)
-  const emailBody = encodeURIComponent(
-    `Hi ${site.shortBrand} Team,\n\nI would like to inquire about your photography sessions and availability.\n\n`
-  )
-  const mailtoUrl = `mailto:${site.email}?subject=${emailSubject}&body=${emailBody}`
-  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-    site.email
-  )}&su=${emailSubject}&body=${emailBody}`
-
-  const handleEmailClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    // If on desktop where mailto is frequently unregistered in Windows/browsers,
-    // open Gmail Web Compose in a new tab so the customer can directly write their message.
-    const isMobile =
-      typeof navigator !== 'undefined' &&
-      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-
-    if (!isMobile) {
-      e.preventDefault()
-      window.open(gmailUrl, '_blank', 'noopener,noreferrer')
-    }
-  }
 
   return (
     <Section id="contact" className="py-20 sm:py-28 bg-background">
@@ -213,49 +191,12 @@ export function Contact() {
               </form>
             </div>
 
-            {/* Connected Footer Block: Direct Contacts & Socials */}
-            <div className="border-t border-border/70 pt-3.5 mt-4 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                <div>
-                  <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
-                    Call Studio
-                  </span>
-                  <a
-                    href={`tel:${site.phone.replace(/\s/g, '')}`}
-                    className="font-semibold text-foreground hover:text-gold transition-colors text-xs"
-                  >
-                    {site.phone}
-                  </a>
-                </div>
-
-                <div>
-                  <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
-                    WhatsApp Chat
-                  </span>
-                  <WhatsAppButton variant="subtle" label="Chat with Admin" />
-                </div>
-
-                <div>
-                  <span className="text-muted-foreground uppercase tracking-wider font-semibold block text-[10px]">
-                    Email Studio
-                  </span>
-                  <a
-                    href={mailtoUrl}
-                    onClick={handleEmailClick}
-                    title={`Send an email to ${site.email}`}
-                    className="font-semibold text-foreground hover:text-gold transition-colors text-xs truncate block"
-                  >
-                    {site.email}
-                  </a>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-border/50 flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                  Follow Our Work
-                </span>
-                <SocialLinks buttonClassName="h-8 w-8" />
-              </div>
+            {/* Connected Footer Block: Socials */}
+            <div className="border-t border-border/70 pt-3.5 mt-4 flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                Follow Our Work
+              </span>
+              <SocialLinks buttonClassName="h-8 w-8" />
             </div>
           </div>
         </div>

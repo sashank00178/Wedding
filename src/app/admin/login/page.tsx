@@ -16,6 +16,8 @@ import {
   AlertCircle,
   CheckCircle2,
   KeyRound,
+  RefreshCw,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,26 +36,45 @@ function AdminLoginForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard'
 
+  // Login form state
   const [email, setEmail] = React.useState('')
   const [password, setPassword] = React.useState('')
   const [showPassword, setShowPassword] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+  const [successBanner, setSuccessBanner] = React.useState<string | null>(null)
 
-  // Forgot Password modal state
+  // Forgot Password modal state (PIN-based recovery)
   const [forgotOpen, setForgotOpen] = React.useState(false)
-  const [resetEmail, setResetEmail] = React.useState('')
-  const [resetKey, setResetKey] = React.useState('')
+  const [resetStep, setResetStep] = React.useState<'pin' | 'password'>('pin')
+  const [recoveryPin, setRecoveryPin] = React.useState('')
+  const [showRecoveryPin, setShowRecoveryPin] = React.useState(false)
+  const [resetTicket, setResetTicket] = React.useState('')
   const [newPassword, setNewPassword] = React.useState('')
-  const [resetStep, setResetStep] = React.useState<'request' | 'reset'>('request')
+  const [confirmPassword, setConfirmPassword] = React.useState('')
+  const [showNewPassword, setShowNewPassword] = React.useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
   const [resetLoading, setResetLoading] = React.useState(false)
+  const [resetError, setResetError] = React.useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const openForgotPassword = () => {
+    setResetError(null)
+    setResetStep('pin')
+    setRecoveryPin('')
+    setShowRecoveryPin(false)
+    setResetTicket('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setForgotOpen(true)
+  }
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
+    setSuccessBanner(null)
 
     if (!email.trim()) {
-      setErrorMessage('Please enter your admin email or username.')
+      setErrorMessage('Please enter your admin email.')
       return
     }
 
@@ -72,7 +93,7 @@ function AdminLoginForm() {
       })
 
       if (res?.error) {
-        setErrorMessage('Invalid credentials. Please verify your email and password.')
+        setErrorMessage(res.error || 'Invalid credentials. Please verify your email and password.')
         toast.error('Authentication failed')
       } else {
         toast.success('Welcome back, Admin!')
@@ -87,10 +108,14 @@ function AdminLoginForm() {
     }
   }
 
-  const handleResetRequest = async (e: React.FormEvent) => {
+  // STEP 1: Verify Master Recovery PIN
+  const handleVerifyPin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!resetEmail.trim()) {
-      toast.error('Please enter your email.')
+    setResetError(null)
+
+    const cleanPin = recoveryPin.trim()
+    if (!cleanPin) {
+      setResetError('Please enter your secret recovery PIN.')
       return
     }
 
@@ -99,34 +124,44 @@ function AdminLoginForm() {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: resetEmail.trim() }),
+        body: JSON.stringify({
+          action: 'verify-pin',
+          pin: cleanPin,
+          email: email.trim().toLowerCase() || undefined,
+        }),
       })
       const data = await res.json()
 
-      if (res.ok) {
-        toast.success('Reset instructions sent / generated')
-        if (data.token) {
-          setResetKey(data.token)
+      if (res.ok && data.resetTicket) {
+        toast.success('Recovery PIN verified!')
+        setResetTicket(data.resetTicket)
+        if (data.adminEmail) {
+          setEmail(data.adminEmail)
         }
-        setResetStep('reset')
+        setResetStep('password')
+        setResetError(null)
       } else {
-        toast.error(data.error || 'Failed to process request')
+        setResetError(data.error || 'Incorrect recovery PIN. Please try again.')
       }
     } catch {
-      toast.error('Network error. Please try again.')
+      setResetError('Network error. Please check your connection and try again.')
     } finally {
       setResetLoading(false)
     }
   }
 
-  const handlePasswordUpdate = async (e: React.FormEvent) => {
+  // STEP 2: Set and confirm new password
+  const handleSavePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!resetKey.trim() || !newPassword.trim()) {
-      toast.error('Please fill in all reset fields.')
+    setResetError(null)
+
+    if (newPassword.length < 6) {
+      setResetError('New password must be at least 6 characters long.')
       return
     }
-    if (newPassword.length < 6) {
-      toast.error('New password must be at least 6 characters.')
+
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match. Please verify.')
       return
     }
 
@@ -136,23 +171,31 @@ function AdminLoginForm() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: resetKey.trim(),
+          resetTicket,
           password: newPassword,
+          email: email.trim().toLowerCase() || undefined,
         }),
       })
       const data = await res.json()
 
       if (res.ok) {
-        toast.success('Password updated successfully! You can now log in.')
+        const targetEmail = data.email || email.trim().toLowerCase() || 'weddingmomentpkr@gmail.com'
+        toast.success('Password updated successfully!')
+        setSuccessBanner('Password updated successfully. Please log in with your new password.')
+        setEmail(targetEmail)
+        setPassword('')
         setForgotOpen(false)
-        setResetStep('request')
-        setResetKey('')
+        setResetStep('pin')
+        setRecoveryPin('')
+        setResetTicket('')
         setNewPassword('')
+        setConfirmPassword('')
+        setResetError(null)
       } else {
-        toast.error(data.error || 'Invalid or expired reset token.')
+        setResetError(data.error || 'Failed to update password. Please try again.')
       }
     } catch {
-      toast.error('Network error. Please try again.')
+      setResetError('Network error. Please check your connection and try again.')
     } finally {
       setResetLoading(false)
     }
@@ -203,6 +246,18 @@ function AdminLoginForm() {
 
         {/* Login Card */}
         <div className="bg-card border border-border rounded-2xl shadow-xl p-6 sm:p-8 relative">
+          {/* Success Banner (e.g. after password reset) */}
+          {successBanner && (
+            <div className="mb-6 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-3 text-sm text-emerald-400 animate-in fade-in-50">
+              <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5 text-emerald-400" />
+              <div>
+                <p className="font-semibold text-foreground">Success</p>
+                <p className="text-xs opacity-90 mt-0.5">{successBanner}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error Banner */}
           {errorMessage && (
             <div className="mb-6 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 flex items-start gap-3 text-sm text-destructive animate-in fade-in-50">
               <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
@@ -213,7 +268,7 @@ function AdminLoginForm() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleLoginSubmit} className="space-y-5">
             {/* Email field */}
             <div className="space-y-2">
               <Label htmlFor="admin-email" className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
@@ -242,8 +297,8 @@ function AdminLoginForm() {
                 </Label>
                 <button
                   type="button"
-                  onClick={() => setForgotOpen(true)}
-                  className="text-xs text-gold hover:underline font-medium"
+                  onClick={openForgotPassword}
+                  className="text-xs text-gold hover:underline font-medium transition-colors cursor-pointer"
                 >
                   Forgot password?
                 </button>
@@ -263,7 +318,7 @@ function AdminLoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -279,7 +334,7 @@ function AdminLoginForm() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-gold text-black hover:bg-gold/90 font-semibold tracking-wide shadow-md transition-all mt-2"
+              className="w-full h-11 bg-gold text-black hover:bg-gold/90 font-semibold tracking-wide shadow-md transition-all mt-2 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -301,106 +356,232 @@ function AdminLoginForm() {
         </div>
       </div>
 
-      {/* Forgot Password Dialog */}
-      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border">
+      {/* Forgot Password Modal (3-Step Verification Code Flow) */}
+      {/* Forgot Password Modal (PIN-Based Recovery Flow) */}
+      <Dialog
+        open={forgotOpen}
+        onOpenChange={(open) => {
+          setForgotOpen(open)
+          if (!open) {
+            setResetError(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md bg-card border-border shadow-2xl">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl flex items-center gap-2">
               <KeyRound className="h-5 w-5 text-gold" />
-              Reset Admin Password
+              {resetStep === 'pin' && 'Enter Recovery PIN'}
+              {resetStep === 'password' && 'Set New Password'}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              {resetStep === 'request'
-                ? 'Enter your registered administrator email to initiate a password reset.'
-                : 'Enter your reset recovery key and choose a new password.'}
+              {resetStep === 'pin' && (
+                'Enter the secret master recovery PIN provided directly by the site owner to reset the administrator password.'
+              )}
+              {resetStep === 'password' && (
+                'Choose a strong new password for your administrator account.'
+              )}
             </DialogDescription>
           </DialogHeader>
 
-          {resetStep === 'request' ? (
-            <form onSubmit={handleResetRequest} className="space-y-4 pt-2">
-              <div className="space-y-2">
-                <Label htmlFor="reset-email" className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Admin Email
-                </Label>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder="weddingmomentpkr@gmail.com"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className="bg-background border-border"
-                  required
-                />
+          {/* Modal error notification */}
+          {resetError && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-start gap-2.5 text-xs text-destructive animate-in fade-in-50">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{resetError}</span>
+            </div>
+          )}
+
+          {/* ──────────────── STEP 1: Enter Secret Recovery PIN ──────────────── */}
+          {resetStep === 'pin' && (
+            <form onSubmit={handleVerifyPin} className="space-y-4 pt-1">
+              {/* Target admin indicator */}
+              <div className="p-2.5 rounded-lg bg-secondary/40 border border-border/80 text-xs flex items-center justify-between text-muted-foreground">
+                <span>Account to recover:</span>
+                <span className="font-mono text-foreground font-semibold">
+                  {email.trim() || 'weddingmomentpkr@gmail.com'}
+                </span>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="recovery-pin-input"
+                  className="text-xs uppercase tracking-wider text-muted-foreground font-semibold"
+                >
+                  Secret Recovery PIN
+                </Label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="recovery-pin-input"
+                    type={showRecoveryPin ? 'text' : 'password'}
+                    placeholder="Enter secret recovery PIN"
+                    value={recoveryPin}
+                    onChange={(e) => setRecoveryPin(e.target.value)}
+                    className="pl-9 pr-10 h-12 bg-background border-border focus-visible:ring-gold font-mono text-base tracking-wider"
+                    autoFocus
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRecoveryPin((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+                    aria-label={showRecoveryPin ? 'Hide PIN' : 'Show PIN'}
+                  >
+                    {showRecoveryPin ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 pt-0.5">
+                  <Shield className="h-3 w-3 text-gold shrink-0" />
+                  Protected by brute-force lockout (locked for 15 minutes after 5 failed attempts).
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setForgotOpen(false)}
+                  className="cursor-pointer"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  disabled={resetLoading}
-                  className="bg-gold text-black hover:bg-gold/90 font-semibold"
+                  disabled={resetLoading || !recoveryPin.trim()}
+                  className="bg-gold text-black hover:bg-gold/90 font-semibold cursor-pointer shadow-md"
                 >
                   {resetLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  ) : null}
-                  Continue
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Verifying PIN...
+                    </>
+                  ) : (
+                    'Verify Recovery PIN'
+                  )}
                 </Button>
               </div>
             </form>
-          ) : (
-            <form onSubmit={handlePasswordUpdate} className="space-y-4 pt-2">
-              <div className="space-y-2">
-                <Label htmlFor="reset-token" className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Reset Token / Recovery Key
-                </Label>
-                <Input
-                  id="reset-token"
-                  placeholder="Paste reset token here"
-                  value={resetKey}
-                  onChange={(e) => setResetKey(e.target.value)}
-                  className="bg-background border-border font-mono text-xs"
-                  required
-                />
-              </div>
+          )}
 
+          {/* ──────────────── STEP 2: Set New Password ──────────────── */}
+          {resetStep === 'password' && (
+            <form onSubmit={handleSavePassword} className="space-y-4 pt-1">
               <div className="space-y-2">
-                <Label htmlFor="new-pass" className="text-xs uppercase tracking-wider text-muted-foreground">
-                  New Password (min 6 characters)
-                </Label>
-                <Input
-                  id="new-pass"
-                  type="password"
-                  placeholder="••••••••"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="bg-background border-border"
-                  required
-                />
-              </div>
-
-              <div className="flex justify-between items-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => setResetStep('request')}
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                <Label
+                  htmlFor="new-password-field"
+                  className="text-xs uppercase tracking-wider text-muted-foreground font-semibold"
                 >
-                  &larr; Back
-                </button>
+                  New Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="new-password-field"
+                    type={showNewPassword ? 'text' : 'password'}
+                    placeholder="At least 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="pl-9 pr-10 bg-background border-border focus-visible:ring-gold"
+                    autoFocus
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="confirm-password-field"
+                  className="text-xs uppercase tracking-wider text-muted-foreground font-semibold"
+                >
+                  Confirm New Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="confirm-password-field"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Re-enter your new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-9 pr-10 bg-background border-border focus-visible:ring-gold"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Password Match & Length Helper */}
+              {newPassword && confirmPassword && (
+                <div className="text-xs flex items-center gap-1.5">
+                  {newPassword === confirmPassword ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Passwords match
+                    </span>
+                  ) : (
+                    <span className="text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3.5 w-3.5" /> Passwords do not match
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setForgotOpen(false)}
+                  className="cursor-pointer"
+                >
+                  Cancel
+                </Button>
                 <Button
                   type="submit"
-                  disabled={resetLoading}
-                  className="bg-gold text-black hover:bg-gold/90 font-semibold"
+                  disabled={
+                    resetLoading ||
+                    newPassword.length < 6 ||
+                    newPassword !== confirmPassword
+                  }
+                  className="bg-gold text-black hover:bg-gold/90 font-semibold cursor-pointer"
                 >
                   {resetLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  ) : null}
-                  Set New Password
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Updating Password...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-1.5" />
+                      Set New Password
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

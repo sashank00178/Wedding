@@ -40,6 +40,8 @@ import {
   Calendar,
   ArrowUpDown,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -175,6 +177,87 @@ function formatEventDate(dateString?: string | null): string {
   return formatBsDate(dateString)
 }
 
+interface GalleryPhotoCardProps {
+  photo: GalleryPhotoItem
+  onEdit: (photo: GalleryPhotoItem) => void
+  onDelete: (photo: GalleryPhotoItem) => void
+  priority?: boolean
+}
+
+/**
+ * Highly optimized, memoized photo card component.
+ * Prevents re-rendering all photo cards on unrelated dashboard state changes,
+ * uses hardware-accelerated transforms, responsive next/image sizing,
+ * and lightweight optimized WebP thumbnails to ensure butter-smooth 60/120fps scrolling.
+ */
+const GalleryPhotoCard = React.memo(function GalleryPhotoCard({
+  photo,
+  onEdit,
+  onDelete,
+  priority = false,
+}: GalleryPhotoCardProps) {
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden group shadow-sm flex flex-col justify-between transform-gpu transition-all hover:border-gold/40 hover:shadow-md">
+      <div className="relative aspect-[4/3] bg-secondary overflow-hidden">
+        <Image
+          src={photo.src}
+          alt={photo.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          quality={75}
+          loading={priority ? 'eager' : 'lazy'}
+          priority={priority}
+          className="object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu will-change-transform"
+        />
+        <div className="absolute top-2 left-2 flex flex-wrap gap-1 pointer-events-none">
+          <span className="px-2 py-0.5 rounded-md bg-black/70 text-gold text-[10px] uppercase font-bold tracking-wider backdrop-blur-sm">
+            {GALLERY_CATEGORY_LABELS[photo.category] || photo.category}
+          </span>
+          {photo.subcategory && (
+            <span className="px-2 py-0.5 rounded-md bg-gold text-black text-[10px] uppercase font-bold tracking-wider shadow-sm">
+              {GALLERY_SUBCATEGORY_LABELS[photo.subcategory] || photo.subcategory}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="p-3.5 flex-1 flex flex-col justify-between">
+        <div>
+          <h3 className="font-serif font-bold text-sm truncate text-foreground" title={photo.title}>
+            {photo.title}
+          </h3>
+          {photo.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+              {photo.description}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-1.5 pt-3 mt-3 border-t border-border/60">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onEdit(photo)}
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Edit2 className="h-3.5 w-3.5 mr-1" />
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onDelete(photo)}
+            className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            Delete
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+})
+
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -240,6 +323,9 @@ export default function AdminDashboardPage() {
 
   // Filters & Sorting
   const [galleryFilter, setGalleryFilter] = React.useState('all')
+  const [gallerySearch, setGallerySearch] = React.useState('')
+  const [galleryPage, setGalleryPage] = React.useState<number>(1)
+  const [galleryPageSize, setGalleryPageSize] = React.useState<number>(16)
   const [bookingFilter, setBookingFilter] = React.useState('all')
   const [bookingSearch, setBookingSearch] = React.useState('')
   const [bookingSort, setBookingSort] = React.useState<
@@ -777,10 +863,50 @@ export default function AdminDashboardPage() {
     )
   }
 
-  // Filtered lists
-  const filteredGallery = gallery.filter((p) =>
-    galleryFilter === 'all' ? true : p.category === galleryFilter
+  // Filtered lists (memoized to prevent heavy recalculations on unrelated dashboard state updates)
+  const filteredGallery = React.useMemo(() => {
+    const query = gallerySearch.toLowerCase().trim()
+    return gallery.filter((p) => {
+      const matchCategory = galleryFilter === 'all' ? true : p.category === galleryFilter
+      if (!query) return matchCategory
+      const matchSearch =
+        p.title.toLowerCase().includes(query) ||
+        (p.description && p.description.toLowerCase().includes(query)) ||
+        (p.subcategory && p.subcategory.toLowerCase().includes(query))
+      return matchCategory && matchSearch
+    })
+  }, [gallery, galleryFilter, gallerySearch])
+
+  const totalGalleryPages = Math.max(
+    1,
+    galleryPageSize === -1 ? 1 : Math.ceil(filteredGallery.length / galleryPageSize)
   )
+
+  // Auto-clamp gallery page when filter or search changes
+  React.useEffect(() => {
+    if (galleryPage > totalGalleryPages) {
+      setGalleryPage(totalGalleryPages)
+    }
+  }, [galleryPage, totalGalleryPages])
+
+  const displayedGallery = React.useMemo(() => {
+    if (galleryPageSize === -1) return filteredGallery
+    const start = (galleryPage - 1) * galleryPageSize
+    return filteredGallery.slice(start, start + galleryPageSize)
+  }, [filteredGallery, galleryPage, galleryPageSize])
+
+  const handlePhotoCardEdit = React.useCallback((photo: GalleryPhotoItem) => {
+    handleOpenEditPhoto(photo)
+  }, [])
+
+  const handlePhotoCardDelete = React.useCallback((photo: GalleryPhotoItem) => {
+    setDeleteAction({
+      type: 'gallery',
+      id: photo.id,
+      title: photo.title,
+    })
+    setDeleteConfirmOpen(true)
+  }, [])
 
   const filteredBookings = bookings
     .filter((b) => {
@@ -1424,35 +1550,107 @@ export default function AdminDashboardPage() {
               {activeTab === 'gallery' && (
                 <div className="space-y-6 animate-in fade-in-50">
                   {/* Top toolbar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-1.5 bg-card border border-border p-1 rounded-xl">
-                      {[
-                        { key: 'all', label: 'All' },
-                        { key: 'wedding', label: 'Wedding Photo Shoots' },
-                        { key: 'portrait', label: 'Indoor Photo Shoots' },
-                      ].map((cat) => (
-                        <button
-                          key={cat.key}
-                          onClick={() => setGalleryFilter(cat.key)}
-                          className={cn(
-                            'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-                            galleryFilter === cat.key
-                              ? 'bg-gold text-black font-bold'
-                              : 'text-muted-foreground hover:text-foreground'
-                          )}
-                        >
-                          {cat.label}
-                        </button>
-                      ))}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5 bg-card border border-border p-1 rounded-xl">
+                        {[
+                          { key: 'all', label: 'All' },
+                          { key: 'wedding', label: 'Wedding Photo Shoots' },
+                          { key: 'portrait', label: 'Indoor Photo Shoots' },
+                        ].map((cat) => (
+                          <button
+                            key={cat.key}
+                            onClick={() => {
+                              setGalleryFilter(cat.key)
+                              setGalleryPage(1)
+                            }}
+                            className={cn(
+                              'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                              galleryFilter === cat.key
+                                ? 'bg-gold text-black font-bold'
+                                : 'text-muted-foreground hover:text-foreground'
+                            )}
+                          >
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Photo Search */}
+                      <div className="relative w-full sm:w-60">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          placeholder="Search photos by title..."
+                          value={gallerySearch}
+                          onChange={(e) => {
+                            setGallerySearch(e.target.value)
+                            setGalleryPage(1)
+                          }}
+                          className="pl-8 pr-8 h-9 text-xs bg-card"
+                        />
+                        {gallerySearch && (
+                          <button
+                            onClick={() => {
+                              setGallerySearch('')
+                              setGalleryPage(1)
+                            }}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <Button
                       onClick={handleOpenAddPhoto}
-                      className="bg-gold text-black hover:bg-gold/90 font-semibold text-xs h-10 gap-1.5 shadow-sm"
+                      className="bg-gold text-black hover:bg-gold/90 font-semibold text-xs h-10 gap-1.5 shadow-sm shrink-0"
                     >
                       <Plus className="h-4 w-4" />
                       Add Photo to Gallery
                     </Button>
+                  </div>
+
+                  {/* Count & Per-Page Bar */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs text-muted-foreground">
+                    <div>
+                      {filteredGallery.length === 0 ? (
+                        <span>No photos matching criteria</span>
+                      ) : galleryPageSize === -1 ? (
+                        <span>Showing all <strong className="text-foreground">{filteredGallery.length}</strong> photos</span>
+                      ) : (
+                        <span>
+                          Showing{' '}
+                          <strong className="text-foreground">
+                            {(galleryPage - 1) * galleryPageSize + 1}–{Math.min(galleryPage * galleryPageSize, filteredGallery.length)}
+                          </strong>{' '}
+                          of <strong className="text-foreground">{filteredGallery.length}</strong> photos
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">Per page:</span>
+                      <div className="flex items-center gap-1 bg-card border border-border p-0.5 rounded-lg">
+                        {[16, 24, 48, -1].map((size) => (
+                          <button
+                            key={size}
+                            onClick={() => {
+                              setGalleryPageSize(size)
+                              setGalleryPage(1)
+                            }}
+                            className={cn(
+                              'px-2 py-0.5 rounded text-[11px] font-medium transition-colors',
+                              galleryPageSize === size
+                                ? 'bg-gold text-black font-bold'
+                                : 'text-muted-foreground hover:text-foreground'
+                            )}
+                          >
+                            {size === -1 ? 'All' : size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Photo Grid */}
@@ -1465,75 +1663,95 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                      {filteredGallery.map((photo) => (
-                        <div
-                          key={photo.id}
-                          className="bg-card border border-border rounded-xl overflow-hidden group shadow-sm flex flex-col justify-between"
-                        >
-                          <div className="relative aspect-[4/3] bg-secondary overflow-hidden">
-                            <Image
-                              src={photo.src}
-                              alt={photo.title}
-                              fill
-                              unoptimized
-                              className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-                              <span className="px-2 py-0.5 rounded-md bg-black/70 text-gold text-[10px] uppercase font-bold tracking-wider backdrop-blur-sm">
-                                {GALLERY_CATEGORY_LABELS[photo.category] || photo.category}
-                              </span>
-                              {photo.subcategory && (
-                                <span className="px-2 py-0.5 rounded-md bg-gold text-black text-[10px] uppercase font-bold tracking-wider shadow-sm">
-                                  {GALLERY_SUBCATEGORY_LABELS[photo.subcategory] || photo.subcategory}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                        {displayedGallery.map((photo, index) => (
+                          <GalleryPhotoCard
+                            key={photo.id}
+                            photo={photo}
+                            onEdit={handlePhotoCardEdit}
+                            onDelete={handlePhotoCardDelete}
+                            priority={index < 4}
+                          />
+                        ))}
+                      </div>
 
-                          <div className="p-3.5 flex-1 flex flex-col justify-between">
-                            <div>
-                              <h3 className="font-serif font-bold text-sm truncate text-foreground">
-                                {photo.title}
-                              </h3>
-                              {photo.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                                  {photo.description}
-                                </p>
-                              )}
-                            </div>
+                      {/* Pagination Controls */}
+                      {totalGalleryPages > 1 && galleryPageSize !== -1 && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border mt-8">
+                          <p className="text-xs text-muted-foreground">
+                            Page <span className="font-semibold text-foreground">{galleryPage}</span> of{' '}
+                            <span className="font-semibold text-foreground">{totalGalleryPages}</span>
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={galleryPage === 1}
+                              onClick={() => {
+                                setGalleryPage((p) => Math.max(1, p - 1))
+                                window.scrollTo({ top: 0, behavior: 'smooth' })
+                              }}
+                              className="h-8 px-2.5 text-xs gap-1"
+                            >
+                              <ChevronLeft className="h-3.5 w-3.5" />
+                              Prev
+                            </Button>
 
-                            <div className="flex items-center justify-end gap-1.5 pt-3 mt-3 border-t border-border/60">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleOpenEditPhoto(photo)}
-                                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                              >
-                                <Edit2 className="h-3.5 w-3.5 mr-1" />
-                                Edit
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setDeleteAction({
-                                    type: 'gallery',
-                                    id: photo.id,
-                                    title: photo.title,
-                                  })
-                                  setDeleteConfirmOpen(true)
-                                }}
-                                className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 className="h-3.5 w-3.5 mr-1" />
-                                Delete
-                              </Button>
-                            </div>
+                            {Array.from({ length: totalGalleryPages }, (_, i) => i + 1)
+                              .filter((page) => {
+                                return (
+                                  page === 1 ||
+                                  page === totalGalleryPages ||
+                                  Math.abs(page - galleryPage) <= 1
+                                )
+                              })
+                              .map((page, idx, arr) => {
+                                const prevPage = arr[idx - 1]
+                                const showEllipsis = prevPage && page - prevPage > 1
+
+                                return (
+                                  <React.Fragment key={page}>
+                                    {showEllipsis && (
+                                      <span className="px-1.5 text-xs text-muted-foreground">…</span>
+                                    )}
+                                    <Button
+                                      variant={galleryPage === page ? 'default' : 'outline'}
+                                      size="sm"
+                                      onClick={() => {
+                                        setGalleryPage(page)
+                                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                                      }}
+                                      className={cn(
+                                        'h-8 w-8 p-0 text-xs',
+                                        galleryPage === page
+                                          ? 'bg-gold text-black hover:bg-gold/90 font-bold'
+                                          : ''
+                                      )}
+                                    >
+                                      {page}
+                                    </Button>
+                                  </React.Fragment>
+                                )
+                              })}
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={galleryPage === totalGalleryPages}
+                              onClick={() => {
+                                setGalleryPage((p) => Math.min(totalGalleryPages, p + 1))
+                                window.scrollTo({ top: 0, behavior: 'smooth' })
+                              }}
+                              className="h-8 px-2.5 text-xs gap-1"
+                            >
+                              Next
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

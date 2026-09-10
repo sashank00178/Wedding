@@ -57,7 +57,7 @@ export const INDOOR_SUB_SERVICES: IndoorSubService[] = [
     id: 'couple',
     key: 'indoor-couple',
     title: 'Couple Portrait / Pre-Wedding',
-    image: '/gallery/couplepotrait.jpeg',
+    image: '/gallery/indoor/potrait.jpeg',
     badge: '2 Packages',
     description: 'Intimate studio sessions capturing the connection and authentic romance between partners.',
     packages: [
@@ -96,7 +96,7 @@ export const INDOOR_SUB_SERVICES: IndoorSubService[] = [
     id: 'family',
     key: 'indoor-family',
     title: 'Family Photoshoot',
-    image: '/gallery/family1.jpg',
+    image: '/gallery/indoor/couplepotrait.jpeg',
     badge: 'Single Package',
     description: 'Timeless studio portraits celebrating family milestones, togetherness, and warmth.',
     packages: [
@@ -119,7 +119,7 @@ export const INDOOR_SUB_SERVICES: IndoorSubService[] = [
     id: 'graduation',
     key: 'indoor-graduation',
     title: 'Graduation Photoshoot',
-    image: '/gallery/graduation1.jpg',
+    image: '/gallery/indoor/DSC04212.jpg',
     badge: 'Fixed Rate',
     description: 'Celebrate your academic milestone with university gowns, family portraits, and frame.',
     packages: [
@@ -144,7 +144,7 @@ export const INDOOR_SUB_SERVICES: IndoorSubService[] = [
     id: 'maternity',
     key: 'indoor-maternity',
     title: 'Maternity Photoshoot',
-    image: '/gallery/maternity1.jpg',
+    image: '/gallery/indoor/MAX00023.jpg',
     badge: '2 Packages',
     description: 'Gentle, ethereal indoor maternity portraiture honoring motherhood and new beginnings.',
     packages: [
@@ -468,7 +468,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     description: "Professional studio portraiture crafted with precision lighting and timeless framing.",
   },
   {
-    src: "/gallery/indoor/couplepotrait.jpeg",
+    src: "/gallery/indoor/potrait.jpeg",
     title: "Couple Portrait & Pre-Wedding",
     category: "portrait",
     description: "Intimate studio couple portrait capturing romantic chemistry with cinematic lighting.",

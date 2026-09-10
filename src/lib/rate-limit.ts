@@ -162,6 +162,13 @@ export const resetPasswordLimiter = new RateLimiter({
   message: 'Too many password reset requests. Please wait a minute before trying again.',
 })
 
+/** Admin OTP reset requests: max 3 per hour */
+export const adminResetOtpLimiter = new RateLimiter({
+  maxRequests: 3,
+  windowMs: 60 * 60 * 1000,
+  message: 'Too many password reset requests. Please wait an hour before requesting another code.',
+})
+
 /** Checkout attempts: 5 per minute per IP */
 export const checkoutLimiter = new RateLimiter({
   maxRequests: 5,

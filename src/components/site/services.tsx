@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Section, SectionTitle } from '@/components/site/section'
 import { SERVICES, type ServiceInfo } from '@/lib/site'
 import { cn } from '@/lib/utils'
@@ -53,18 +53,6 @@ function ServiceCard({ service }: { service: ServiceInfo }) {
               isIndoor ? "object-[center_30%]" : "object-[center_35%]"
             )}
           />
-          {isIndoor && (
-            <div className="absolute top-2.5 right-2.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-gold border border-gold/40 flex items-center gap-1 shadow-md">
-              <Sparkles className="h-3 w-3" />
-              4 Sessions
-            </div>
-          )}
-          {isWedding && (
-            <div className="absolute top-2.5 right-2.5 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-gold border border-gold/40 flex items-center gap-1 shadow-md">
-              <Sparkles className="h-3 w-3" />
-              3 Categories
-            </div>
-          )}
         </div>
 
         <h3 className="font-serif text-xl font-bold text-foreground mb-2">

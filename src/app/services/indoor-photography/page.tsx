@@ -44,7 +44,7 @@ export default function IndoorPhotographyPage() {
           setPackages(map)
         }
       })
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   const getPrice = (key: string, fallback: string) => {
@@ -111,8 +111,8 @@ export default function IndoorPhotographyPage() {
               </h1>
 
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-6 max-w-2xl">
-                Our luxury indoor studio provides fully equipped backdrops, editorial lighting, and creative direction. 
-                Explore our 4 dedicated sessions below — featuring couple portraits, family celebrations, graduation ceremonies, 
+                Our luxury indoor studio provides fully equipped backdrops, editorial lighting, and creative direction.
+                Explore our 4 dedicated sessions below — featuring couple portraits, family celebrations, graduation ceremonies,
                 and ethereal maternity shoots with transparent package rates.
               </p>
 
@@ -160,14 +160,13 @@ export default function IndoorPhotographyPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center pb-8 border-b border-border/70 mb-8">
                 <div className="relative aspect-[16/10] lg:aspect-[4/3] rounded-xl overflow-hidden border border-border/80 lg:col-span-4 bg-secondary">
                   <Image
-                    src="/gallery/couplepotrait.jpeg"
+                    src="/gallery/indoor/potrait.jpeg"
                     alt="Couple Portrait and Pre-Wedding Photography"
                     fill
                     priority
-                    quality={95}
-                    unoptimized
+                    quality={100}
                     sizes="(max-width: 1024px) 100vw, 33vw"
-                    className="object-cover object-top"
+                    className="object-cover object-[center_10%]"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm px-2.5 py-1 rounded text-gold text-xs font-bold uppercase tracking-wider border border-gold/30">
@@ -184,7 +183,7 @@ export default function IndoorPhotographyPage() {
                     Couple Portrait / Pre-Wedding
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-4">
-                    Celebrate your romantic story with editorial indoor poses, soft rim lighting, and luxury framing. 
+                    Celebrate your romantic story with editorial indoor poses, soft rim lighting, and luxury framing.
                     Choose between our focused 1-hour session or our complete 3-hour experience with wardrobe changes, multiple reels, and makeup.
                   </p>
                   <div className="flex flex-wrap gap-2 text-xs text-foreground/80">
@@ -364,11 +363,11 @@ export default function IndoorPhotographyPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center pb-8 border-b border-border/70 mb-8">
                 <div className="relative aspect-[16/10] lg:aspect-[4/3] rounded-xl overflow-hidden border border-border/80 lg:col-span-4 bg-secondary">
                   <Image
-                    src="/gallery/family1.jpg"
+                    src="/gallery/indoor/couplepotrait.jpeg"
                     alt="Family Photoshoot Session"
                     fill
                     sizes="(max-width: 1024px) 100vw, 33vw"
-                    className="object-cover"
+                    className="object-cover object-top"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm px-2.5 py-1 rounded text-gold text-xs font-bold uppercase tracking-wider border border-gold/30">
@@ -385,7 +384,7 @@ export default function IndoorPhotographyPage() {
                     Family Photoshoot
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-4">
-                    Preserve generational milestones, warmth, and natural laughter in our spacious indoor studio. 
+                    Preserve generational milestones, warmth, and natural laughter in our spacious indoor studio.
                     Includes dedicated group portraits, parent-child combinations, individual portraits, and framed wall art for your living room.
                   </p>
                   <div className="flex flex-wrap gap-2 text-xs text-foreground/80">
@@ -475,11 +474,11 @@ export default function IndoorPhotographyPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center pb-8 border-b border-border/70 mb-8">
                 <div className="relative aspect-[16/10] lg:aspect-[4/3] rounded-xl overflow-hidden border border-border/80 lg:col-span-4 bg-secondary">
                   <Image
-                    src="/gallery/graduation1.jpg"
+                    src="/gallery/indoor/DSC04212.jpg"
                     alt="Graduation Photoshoot Session"
                     fill
                     sizes="(max-width: 1024px) 100vw, 33vw"
-                    className="object-cover"
+                    className="object-cover object-top"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm px-2.5 py-1 rounded text-gold text-xs font-bold uppercase tracking-wider border border-gold/30">
@@ -496,8 +495,8 @@ export default function IndoorPhotographyPage() {
                     Graduation Photoshoot
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-4">
-                    Celebrate your degree with family and friends! Our studio provides authentic gowns and sashes 
-                    for Pokhara University (PU), Tribhuvan University (TU), and Kathmandu University (KU). 
+                    Celebrate your degree with family and friends! Our studio provides authentic gowns and sashes
+                    for Pokhara University (PU), Tribhuvan University (TU), and Kathmandu University (KU).
                     Bring your parents and siblings along at no extra cost.
                   </p>
                   <div className="flex flex-wrap gap-2 text-xs text-foreground/80">
@@ -590,7 +589,7 @@ export default function IndoorPhotographyPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center pb-8 border-b border-border/70 mb-8">
                 <div className="relative aspect-[16/10] lg:aspect-[4/3] rounded-xl overflow-hidden border border-border/80 lg:col-span-4 bg-secondary">
                   <Image
-                    src="/gallery/maternity1.jpg"
+                    src="/gallery/indoor/MAX00023.jpg"
                     alt="Maternity Photoshoot Session"
                     fill
                     sizes="(max-width: 1024px) 100vw, 33vw"
@@ -611,8 +610,8 @@ export default function IndoorPhotographyPage() {
                     Maternity Photoshoot
                   </h2>
                   <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mb-4">
-                    Celebrate the tender anticipation of motherhood with artistic rim lighting, comfortable private studio suites, 
-                    and flowing maternity gowns. Select between our all-inclusive Package 1 with wardrobe and makeup, 
+                    Celebrate the tender anticipation of motherhood with artistic rim lighting, comfortable private studio suites,
+                    and flowing maternity gowns. Select between our all-inclusive Package 1 with wardrobe and makeup,
                     or our streamlined Package 2 photoshoot only.
                   </p>
                   <div className="flex flex-wrap gap-2 text-xs text-foreground/80">
