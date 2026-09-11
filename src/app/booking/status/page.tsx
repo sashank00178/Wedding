@@ -4,8 +4,8 @@ import * as React from 'react'
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Header } from '@/components/site/header'
-import { Footer } from '@/components/site/footer'
+import { Header } from '@/components/layout/header'
+import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import {
   CheckCircle2,
@@ -20,8 +20,8 @@ import {
   Sparkles,
   ShieldCheck,
 } from 'lucide-react'
-import { createAdvanceBookingWhatsAppUrl } from '@/lib/whatsapp'
-import { formatBsDate, formatBsDateTime } from '@/lib/nepali-date'
+import { createAdvanceBookingWhatsAppUrl } from '@/services/whatsappService'
+import { formatBsDate, formatBsDateTime } from '@/utils/nepaliDate'
 
 interface OrderDetails {
   id: string

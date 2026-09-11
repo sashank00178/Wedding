@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPackagePrices } from '@/lib/site-db'
+import { getPackagePrices } from '@/database/siteDb'
 
 export const dynamic = 'force-dynamic'
 

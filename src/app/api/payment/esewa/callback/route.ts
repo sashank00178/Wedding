@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db } from '@/database/client';
 import {
   decodeEsewaCallbackData,
   verifyEsewaTransaction,
   getEsewaConfig,
-} from "@/lib/esewa";
+} from '@/services/paymentService';
 import {
   sendAdvanceBookingConfirmation,
   sendAdminAdvanceBookingNotification,
-} from "@/lib/email";
+} from '@/services/emailService';
 
 export const runtime = "nodejs";
 

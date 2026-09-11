@@ -26,6 +26,21 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@/database/*": [
+        "./src/database/*"
+      ],
+      "@/middleware/*": [
+        "./src/middleware/*"
+      ],
+      "@/services/*": [
+        "./src/services/*"
+      ],
+      "@/components/*": [
+        "./src/components/*"
+      ],
+      "@/utils/*": [
+        "./src/utils/*"
       ]
     }
   },

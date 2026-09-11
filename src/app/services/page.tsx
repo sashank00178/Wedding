@@ -13,12 +13,12 @@ import {
   ArrowRight,
   HelpCircle,
 } from 'lucide-react'
-import { Header } from '@/components/site/header'
-import { Footer } from '@/components/site/footer'
+import { Header } from '@/components/layout/header'
+import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
-import { SERVICES, SITE, type ServiceInfo } from '@/lib/site'
-import { WhatsAppButton } from '@/components/site/whatsapp-button'
-import { cn } from '@/lib/utils'
+import { SERVICES, SITE, type ServiceInfo } from '@/utils/siteConfig'
+import { WhatsAppButton } from '@/components/layout/whatsapp-button'
+import { cn } from '@/utils/common'
 
 interface ServiceDetail extends ServiceInfo {
   tagline: string

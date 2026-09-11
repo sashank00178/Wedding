@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { createBooking, getRecentBookings } from "@/services/bookingService";
 
 export const runtime = "nodejs";
 
@@ -15,15 +15,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const booking = await db.booking.create({
-      data: {
-        name: String(name),
-        email: String(email),
-        phone: String(phone),
-        service: String(service),
-        date: String(date),
-        message: message ? String(message) : null,
-      },
+    const booking = await createBooking({
+      name,
+      email,
+      phone,
+      service,
+      date,
+      message,
     });
 
     return NextResponse.json({
@@ -42,10 +40,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const bookings = await db.booking.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
+    const bookings = await getRecentBookings(50);
     return NextResponse.json({ success: true, bookings });
   } catch (err) {
     console.error("[GET /api/bookings] error:", err);
@@ -55,3 +50,4 @@ export async function GET() {
     );
   }
 }
+

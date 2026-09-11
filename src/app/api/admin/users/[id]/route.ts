@@ -14,8 +14,8 @@
  */
 
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { requireAdmin, AuthError } from '@/lib/auth-helpers'
+import { db } from '@/database/client'
+import { requireAdmin, AuthError } from '@/middleware/auth'
 
 export async function GET(
   request: Request,

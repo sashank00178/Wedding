@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db } from '@/database/client'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
-import { sendPasswordResetOtp } from '@/lib/email'
-import { adminResetOtpLimiter, getClientIp } from '@/lib/rate-limit'
-import { clearAllFailedLogins } from '@/lib/failed-login'
-import { verifyAdminRecoveryPin } from '@/lib/recovery-pin'
+import { sendPasswordResetOtp } from '@/services/emailService'
+import { adminResetOtpLimiter, getClientIp } from '@/middleware/rateLimit'
+import { clearAllFailedLogins } from '@/services/failedLoginService'
+import { verifyAdminRecoveryPin } from '@/middleware/recoveryPin'
 
 /**
  * Admin Password Reset API

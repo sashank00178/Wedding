@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getDynamicHeroImages } from '@/lib/gallery-loader'
+import { getDynamicHeroImages } from '@/services/galleryService'
 
 export const dynamic = 'force-dynamic'
 

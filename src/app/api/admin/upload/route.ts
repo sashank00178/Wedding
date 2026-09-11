@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
-import { requireAdmin, AuthError } from '@/lib/auth-helpers'
+import { requireAdmin, AuthError } from '@/middleware/auth'
 
 export async function POST(req: Request) {
   try {

@@ -12,11 +12,11 @@
  */
 
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db } from '@/database/client'
 import bcrypt from 'bcryptjs'
-import { resetConfirmSchema } from '@/lib/validations/auth'
-import { resetPasswordLimiter, getClientIp } from '@/lib/rate-limit'
-import { rateLimitResponse } from '@/lib/security-headers'
+import { resetConfirmSchema } from '@/utils/validations/auth'
+import { resetPasswordLimiter, getClientIp } from '@/middleware/rateLimit'
+import { rateLimitResponse } from '@/middleware/securityHeaders'
 
 const BCRYPT_ROUNDS = 12
 

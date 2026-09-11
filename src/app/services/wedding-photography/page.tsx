@@ -19,15 +19,15 @@ import {
   Layers,
   MessageCircle,
 } from 'lucide-react'
-import { Header } from '@/components/site/header'
-import { Footer } from '@/components/site/footer'
+import { Header } from '@/components/layout/header'
+import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import {
   WEDDING_CATEGORIES,
   SITE,
   type WeddingMainCategoryKey,
-} from '@/lib/site'
-import { cn } from '@/lib/utils'
+} from '@/utils/siteConfig'
+import { cn } from '@/utils/common'
 
 const BRIDE_TO_BE_CONFIG = {
   title: 'Bride to Be',

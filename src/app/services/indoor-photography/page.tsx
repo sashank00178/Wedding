@@ -17,10 +17,10 @@ import {
   GraduationCap,
   Baby,
 } from 'lucide-react'
-import { Header } from '@/components/site/header'
-import { Footer } from '@/components/site/footer'
+import { Header } from '@/components/layout/header'
+import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/common'
 
 export default function IndoorPhotographyPage() {
   const [packages, setPackages] = React.useState<

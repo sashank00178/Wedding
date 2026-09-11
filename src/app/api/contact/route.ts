@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { contactLimiter, getClientIp } from "@/lib/rate-limit"
-import { rateLimitResponse } from "@/lib/security-headers";
-import { sendContactNotification } from "@/lib/email";
+import { db } from '@/database/client';
+import { contactLimiter, getClientIp } from '@/middleware/rateLimit'
+import { rateLimitResponse } from '@/middleware/securityHeaders';
+import { sendContactNotification } from '@/services/emailService';
 
 export const runtime = "nodejs";
 

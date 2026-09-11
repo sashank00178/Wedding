@@ -16,8 +16,8 @@
  */
 
 import { NextResponse } from 'next/server'
-import { requireAdmin, AuthError } from '@/lib/auth-helpers'
-import { clearAllFailedLogins } from '@/lib/failed-login'
+import { requireAdmin, AuthError } from '@/middleware/auth'
+import { clearAllFailedLogins } from '@/services/failedLoginService'
 import { z } from 'zod'
 
 const unlockSchema = z.object({

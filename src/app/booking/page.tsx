@@ -3,9 +3,9 @@
 import * as React from 'react'
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Header } from '@/components/site/header'
-import { Booking } from '@/components/site/booking'
-import { Footer } from '@/components/site/footer'
+import { Header } from '@/components/layout/header'
+import { Booking } from '@/components/booking/booking-form'
+import { Footer } from '@/components/layout/footer'
 
 function BookingContent() {
   const searchParams = useSearchParams()

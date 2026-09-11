@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { requireAdmin, AuthError } from '@/lib/auth-helpers'
-import { ensureInitialData } from '@/lib/site-db'
+import { db } from '@/database/client'
+import { requireAdmin, AuthError } from '@/middleware/auth'
+import { ensureInitialData } from '@/database/siteDb'
 
 export async function GET() {
   try {

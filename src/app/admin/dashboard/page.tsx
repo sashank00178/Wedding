@@ -46,8 +46,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatBsDateTime, formatBsDate } from '@/lib/nepali-date'
-import type { PackagePriceData } from '@/lib/packages-data'
+import { formatBsDateTime, formatBsDate } from '@/utils/nepaliDate'
+import type { PackagePriceData } from '@/utils/packagesData'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
@@ -75,9 +75,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
-import { NetworkAccessCard } from '@/components/site/network-access-card'
-import { GALLERY_CATEGORY_LABELS, GALLERY_SUBCATEGORY_LABELS } from '@/lib/site'
+import { cn } from '@/utils/common'
+import { NetworkAccessCard } from '@/components/admin/network-access-card'
+import { GALLERY_CATEGORY_LABELS, GALLERY_SUBCATEGORY_LABELS } from '@/utils/siteConfig'
 
 type TabType =
   | 'overview'
@@ -226,11 +226,6 @@ const GalleryPhotoCard = React.memo(function GalleryPhotoCard({
           <h3 className="font-serif font-bold text-sm truncate text-foreground" title={photo.title}>
             {photo.title}
           </h3>
-          {photo.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-              {photo.description}
-            </p>
-          )}
         </div>
 
         <div className="flex items-center justify-end gap-1.5 pt-3 mt-3 border-t border-border/60">
@@ -347,7 +342,7 @@ export default function AdminDashboardPage() {
   // Auto-save photo draft to localStorage
   React.useEffect(() => {
     if (!editingPhoto && galleryModalOpen) {
-      if (photoForm.title || photoForm.description || photoForm.src) {
+      if (photoForm.title || photoForm.src) {
         try {
           localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(photoForm))
         } catch {}
@@ -483,14 +478,14 @@ export default function AdminDashboardPage() {
       const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY)
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft)
-        if (parsed.title || parsed.description || parsed.src) {
+        if (parsed.title || parsed.src) {
           setPhotoForm(parsed)
           toast.info('Restored unsaved photo draft', {
             action: {
               label: 'Clear Draft',
               onClick: () => {
                 localStorage.removeItem(DRAFT_STORAGE_KEY)
-                setPhotoForm({ title: '', category: 'wedding', subcategory: '', description: '', src: '' })
+                setPhotoForm({ title: '', category: 'wedding', subcategory: '', src: '' })
               },
             },
           })
@@ -504,7 +499,6 @@ export default function AdminDashboardPage() {
       title: '',
       category: 'wedding',
       subcategory: '',
-      description: '',
       src: '',
     })
     setGalleryModalOpen(true)
@@ -516,7 +510,6 @@ export default function AdminDashboardPage() {
       title: photo.title,
       category: photo.category,
       subcategory: photo.subcategory || '',
-      description: photo.description || '',
       src: photo.src,
     })
     setGalleryModalOpen(true)
@@ -871,7 +864,6 @@ export default function AdminDashboardPage() {
       if (!query) return matchCategory
       const matchSearch =
         p.title.toLowerCase().includes(query) ||
-        (p.description && p.description.toLowerCase().includes(query)) ||
         (p.subcategory && p.subcategory.toLowerCase().includes(query))
       return matchCategory && matchSearch
     })
@@ -3079,30 +3071,15 @@ export default function AdminDashboardPage() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                Description / Caption (Optional)
-              </Label>
-              <Textarea
-                rows={2}
-                placeholder="A brief description of the photo..."
-                value={photoForm.description}
-                onChange={(e) =>
-                  setPhotoForm((prev) => ({ ...prev, description: e.target.value }))
-                }
-                className="bg-background border-border text-xs"
-              />
-            </div>
-
             <DialogFooter className="pt-2 flex items-center justify-between sm:justify-between w-full">
-              {!editingPhoto && (photoForm.title || photoForm.description || photoForm.src) ? (
+              {!editingPhoto && (photoForm.title || photoForm.src) ? (
                 <button
                   type="button"
                   onClick={() => {
                     try {
                       localStorage.removeItem(DRAFT_STORAGE_KEY)
                     } catch {}
-                    setPhotoForm({ title: '', category: 'wedding', subcategory: '', description: '', src: '' })
+                    setPhotoForm({ title: '', category: 'wedding', subcategory: '', src: '' })
                     toast.info('Draft cleared')
                   }}
                   className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"

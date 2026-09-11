@@ -1,7 +1,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Metadata } from 'next'
-import { NetworkAccessCard } from '@/components/site/network-access-card'
+import { NetworkAccessCard } from '@/components/admin/network-access-card'
 import { ArrowLeft, Wifi, Shield, Laptop, Smartphone, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 

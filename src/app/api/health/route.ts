@@ -16,8 +16,8 @@
  */
 
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { validateEnv, getEnvSummary } from '@/lib/env-validation'
+import { db } from '@/database/client'
+import { validateEnv, getEnvSummary } from '@/utils/envValidation'
 
 const SERVER_START_TIME = Date.now()
 

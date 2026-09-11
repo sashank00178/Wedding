@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getFullSiteData } from '@/lib/site-db'
+import { getFullSiteData } from '@/database/siteDb'
 
 export const dynamic = 'force-dynamic'
 

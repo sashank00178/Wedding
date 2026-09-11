@@ -1,11 +1,11 @@
-import { Header } from '@/components/site/header'
-import { Hero } from '@/components/site/hero'
-import { Services } from '@/components/site/services'
-import { Gallery } from '@/components/site/gallery'
-import { Booking } from '@/components/site/booking'
-import { Contact } from '@/components/site/contact'
-import { Footer } from '@/components/site/footer'
-import { getDynamicHeroImages } from '@/lib/gallery-loader'
+import { Header } from '@/components/layout/header'
+import { Hero } from '@/components/hero/hero-section'
+import { Services } from '@/components/services/services-showcase'
+import { Gallery } from '@/components/gallery/gallery-grid'
+import { Booking } from '@/components/booking/booking-form'
+import { Contact } from '@/components/layout/contact'
+import { Footer } from '@/components/layout/footer'
+import { getDynamicHeroImages } from '@/services/galleryService'
 
 export default function Home() {
   const heroImages = getDynamicHeroImages()

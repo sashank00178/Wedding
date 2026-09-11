@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, RotateCcw } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/common'
 import {
   Popover,
   PopoverContent,
@@ -22,7 +22,7 @@ import {
   NEPALI_DAYS_NP,
   parseAdDate,
   toDevanagariNumerals,
-} from '@/lib/nepali-date'
+} from '@/utils/nepaliDate'
 
 export interface NepaliDatePickerProps {
   /**

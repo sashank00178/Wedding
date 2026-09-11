@@ -13,11 +13,11 @@
 
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { db } from '@/lib/db'
-import { resetRequestSchema } from '@/lib/validations/auth'
-import { resetPasswordLimiter, getClientIp } from '@/lib/rate-limit'
-import { rateLimitResponse } from '@/lib/security-headers'
-import { sendPasswordReset } from '@/lib/email'
+import { db } from '@/database/client'
+import { resetRequestSchema } from '@/utils/validations/auth'
+import { resetPasswordLimiter, getClientIp } from '@/middleware/rateLimit'
+import { rateLimitResponse } from '@/middleware/securityHeaders'
+import { sendPasswordReset } from '@/services/emailService'
 
 export async function POST(request: Request) {
   try {

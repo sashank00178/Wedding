@@ -152,6 +152,20 @@ const nextConfig: NextConfig = {
     ]
   },
 
+  // ── Rewrites for backward-compatible image paths ──────────────
+  async rewrites() {
+    return [
+      {
+        source: '/gallery/:path*',
+        destination: '/assets/images/gallery/:path*',
+      },
+      {
+        source: '/hero.jpeg',
+        destination: '/assets/images/hero/hero.jpeg',
+      },
+    ]
+  },
+
   // ── Powered-by header removal ────────────────────────────────────
   poweredByHeader: false,
 };

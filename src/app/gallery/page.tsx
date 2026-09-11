@@ -16,8 +16,8 @@ import {
   HeartHandshake,
 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
-import { Header } from '@/components/site/header'
-import { Footer } from '@/components/site/footer'
+import { Header } from '@/components/layout/header'
+import { Footer } from '@/components/layout/footer'
 import { Button } from '@/components/ui/button'
 import {
   GALLERY_ITEMS,
@@ -27,9 +27,9 @@ import {
   WEDDING_SUBCATEGORIES,
   type GalleryCategory,
   type GalleryItem,
-} from '@/lib/site'
-import { WhatsAppButton } from '@/components/site/whatsapp-button'
-import { cn } from '@/lib/utils'
+} from '@/utils/siteConfig'
+import { WhatsAppButton } from '@/components/layout/whatsapp-button'
+import { cn } from '@/utils/common'
 
 type Filter = 'all' | GalleryCategory
 
@@ -335,9 +335,6 @@ function GalleryContent() {
                       <h3 className="font-serif text-base sm:text-lg font-bold leading-tight">
                         {photo.title}
                       </h3>
-                      <p className="text-xs text-white/80 line-clamp-2 mt-1 leading-relaxed">
-                        {photo.description}
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -488,10 +485,7 @@ function GalleryContent() {
                 )}
                 <h2 className="font-serif text-xl font-bold">{currentPhoto.title}</h2>
               </div>
-              <p className="text-xs sm:text-sm text-white/80 max-w-xl mx-auto leading-relaxed">
-                {currentPhoto.description}
-              </p>
-              <div className="mt-4 flex items-center justify-center gap-3">
+              <div className="mt-3 flex items-center justify-center gap-3">
                 <Button asChild size="sm" className="bg-gold text-black hover:bg-gold/90 font-semibold text-xs">
                   <Link href="/#booking">
                     Book a Shoot Like This

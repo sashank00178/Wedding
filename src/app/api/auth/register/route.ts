@@ -17,12 +17,12 @@
  */
 
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db } from '@/database/client'
 import bcrypt from 'bcryptjs'
-import { registerSchema } from '@/lib/validations/auth'
-import { registerLimiter, getClientIp } from '@/lib/rate-limit'
-import { rateLimitResponse } from '@/lib/security-headers'
-import { sendWelcomeEmail } from '@/lib/email'
+import { registerSchema } from '@/utils/validations/auth'
+import { registerLimiter, getClientIp } from '@/middleware/rateLimit'
+import { rateLimitResponse } from '@/middleware/securityHeaders'
+import { sendWelcomeEmail } from '@/services/emailService'
 
 const BCRYPT_ROUNDS = 12 // higher = slower but more secure
 

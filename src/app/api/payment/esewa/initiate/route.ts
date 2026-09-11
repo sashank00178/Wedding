@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getEsewaConfig, generateEsewaSignature } from "@/lib/esewa";
+import { db } from '@/database/client';
+import { getEsewaConfig, generateEsewaSignature } from '@/services/paymentService';
 
 export const runtime = "nodejs";
 
