@@ -77,23 +77,30 @@ export function Header() {
     setMobileOpen(false)
   }, [pathname])
 
-  // Robust scroll listener supporting mobile touch scrolling and documentElement
+  // Robust scroll listener supporting mobile touch scrolling and documentElement (throttled with rAF)
   React.useEffect(() => {
+    let ticking = false
     const handleScroll = () => {
-      const y =
-        window.scrollY ||
-        window.pageYOffset ||
-        document.documentElement.scrollTop ||
-        document.body.scrollTop ||
-        0
-      setScrolled(y > 15)
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const y =
+            window.scrollY ||
+            window.pageYOffset ||
+            document.documentElement.scrollTop ||
+            document.body.scrollTop ||
+            0
+          const isScrolled = y > 15
+          setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev))
+          ticking = false
+        })
+        ticking = true
+      }
     }
 
     handleScroll()
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     window.addEventListener('touchmove', handleScroll, { passive: true })
-    window.addEventListener('touchend', handleScroll, { passive: true })
     window.addEventListener('resize', handleScroll, { passive: true })
 
     // Native IntersectionObserver on #home hero section
@@ -104,7 +111,8 @@ export function Header() {
         ([entry]) => {
           if (entry) {
             const atTop = entry.isIntersecting && entry.boundingClientRect.top > -20
-            setScrolled(!atTop)
+            const shouldBeScrolled = !atTop
+            setScrolled((prev) => (prev !== shouldBeScrolled ? shouldBeScrolled : prev))
           }
         },
         { rootMargin: '-15px 0px 0px 0px', threshold: [0, 0.1, 0.5, 1.0] }
@@ -115,7 +123,6 @@ export function Header() {
     return () => {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('touchmove', handleScroll)
-      window.removeEventListener('touchend', handleScroll)
       window.removeEventListener('resize', handleScroll)
       if (observer) observer.disconnect()
     }
@@ -158,8 +165,23 @@ export function Header() {
     setMobileOpen(false)
     setBookingDropdownOpen(false)
 
-    // Dedicated standalone pages (e.g. /services, /gallery)
-    if (href.startsWith('/') && !href.includes('#')) {
+    const isHome = href === '/' || href === '#home' || href === '/#home'
+    if (isHome) {
+      if (pathname === '/') {
+        e.preventDefault()
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        history.replaceState(null, '', '/')
+        setCurrentHash('')
+        setScrolled(false)
+      } else {
+        e.preventDefault()
+        router.push('/')
+      }
+      return
+    }
+
+    // Dedicated standalone pages (e.g. /services, /gallery, /services#portrait)
+    if (href.startsWith('/') && !href.startsWith('/#')) {
       return
     }
 
@@ -240,13 +262,13 @@ export function Header() {
           }}
           className="flex items-center gap-2 sm:gap-2.5 group shrink-0"
         >
-          <div className="relative h-7 w-7 sm:h-8 sm:w-8 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <div className="relative h-8 w-11 sm:h-9 sm:w-12 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
             <Image
-              src="/logo.svg"
+              src="/logo.png"
               alt="Wedding Moment Logo"
-              width={32}
-              height={32}
-              className="h-7 w-7 sm:h-8 sm:w-8 object-contain drop-shadow-sm"
+              width={56}
+              height={41}
+              className="h-8 w-auto sm:h-9 object-contain drop-shadow-sm"
               priority
             />
           </div>
@@ -390,6 +412,10 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={(e) => {
+                  if (link.href === '/' && pathname === '/') {
+                    handleNavClick(e, '/')
+                    return
+                  }
                   if (!isPageLink) {
                     handleNavClick(e, link.href)
                   } else {
@@ -551,6 +577,10 @@ export function Header() {
                   href={link.href}
                   onClick={(e) => {
                     setMobileOpen(false)
+                    if (link.href === '/' && pathname === '/') {
+                      handleNavClick(e, '/')
+                      return
+                    }
                     if (!isPageLink) {
                       handleNavClick(e, link.href)
                     }

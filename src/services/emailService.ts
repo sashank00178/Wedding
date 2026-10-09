@@ -159,7 +159,7 @@ function emailTemplate(bodyHtml: string, preview: string): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#000000; padding:24px 32px; text-align:center;">
-              <h1 style="margin:0; color:#D4AF37; font-size:24px; font-weight:700; letter-spacing:1px;">
+              <h1 style="margin:0; color:#f62c7f; font-size:24px; font-weight:700; letter-spacing:1px;">
                 ${BRAND}
               </h1>
               <p style="margin:4px 0 0; color:#999999; font-size:13px; letter-spacing:2px;">
@@ -255,8 +255,8 @@ export async function sendOrderConfirmation(data: OrderConfirmationData): Promis
       </tr>
       ${data.discount > 0 ? `
       <tr>
-        <td style="padding:4px 0; color:#D4AF37; font-size:14px;">Discount</td>
-        <td style="padding:4px 16px; text-align:right; color:#D4AF37; font-size:14px;">- Rs. ${data.discount.toLocaleString()}</td>
+        <td style="padding:4px 0; color:#f62c7f; font-size:14px;">Discount</td>
+        <td style="padding:4px 16px; text-align:right; color:#f62c7f; font-size:14px;">- Rs. ${data.discount.toLocaleString()}</td>
       </tr>` : ''}
       ${data.tax > 0 ? `
       <tr>
@@ -270,7 +270,7 @@ export async function sendOrderConfirmation(data: OrderConfirmationData): Promis
       </tr>` : ''}
       <tr style="border-top:2px solid #000;">
         <td style="padding:8px 0; font-weight:700; font-size:16px;">Total</td>
-        <td style="padding:8px 16px; text-align:right; font-weight:700; font-size:16px; color:#D4AF37;">
+        <td style="padding:8px 16px; text-align:right; font-weight:700; font-size:16px; color:#f62c7f;">
           Rs. ${data.total.toLocaleString()}
         </td>
       </tr>
@@ -346,8 +346,8 @@ export async function sendAdminOrderNotification(data: AdminOrderNotificationDat
           <td style="padding:6px 0; text-align:right; font-size:14px;">${data.itemCount}</td>
         </tr>
         <tr style="border-top:1px solid #ddd;">
-          <td style="padding:10px 0; color:#D4AF37; font-weight:700; font-size:15px;">Total</td>
-          <td style="padding:10px 0; text-align:right; font-weight:700; font-size:15px; color:#D4AF37;">
+          <td style="padding:10px 0; color:#f62c7f; font-weight:700; font-size:15px;">Total</td>
+          <td style="padding:10px 0; text-align:right; font-weight:700; font-size:15px; color:#f62c7f;">
             Rs. ${data.total.toLocaleString()}
           </td>
         </tr>
@@ -386,7 +386,7 @@ export async function sendPasswordReset(data: PasswordResetData): Promise<EmailR
 
     <div style="text-align:center; margin:24px 0;">
       <a href="${resetUrl}"
-         style="display:inline-block; background-color:#000; color:#D4AF37; padding:14px 32px;
+         style="display:inline-block; background-color:#000; color:#f62c7f; padding:14px 32px;
                 border-radius:6px; text-decoration:none; font-weight:700; font-size:15px; letter-spacing:0.5px;">
         Reset Password
       </a>
@@ -432,15 +432,15 @@ export async function sendPasswordResetOtp(data: PasswordResetOtpData): Promise<
       We received a request to reset the password for your administrator account on <strong>${BRAND}</strong>.
     </p>
 
-    <div style="background-color:#fffdf5; border:1px solid #d4af37; border-radius:8px; padding:24px; text-align:center; margin:24px 0;">
+    <div style="background-color:#fffdf5; border:1px solid #f62c7f; border-radius:8px; padding:24px; text-align:center; margin:24px 0;">
       <p style="margin:0 0 10px; color:#888; font-size:13px; text-transform:uppercase; letter-spacing:1.5px; font-weight:600;">
         Verification Code
       </p>
-      <div style="display:inline-block; background-color:#111; color:#D4AF37; padding:12px 28px; border-radius:8px; font-family:'Courier New', Courier, monospace; font-size:32px; font-weight:700; letter-spacing:8px;">
+      <div style="display:inline-block; background-color:#111; color:#f62c7f; padding:12px 28px; border-radius:8px; font-family:'Courier New', Courier, monospace; font-size:32px; font-weight:700; letter-spacing:8px;">
         ${data.code}
       </div>
       <p style="margin:16px 0 0; color:#222; font-size:15px; font-weight:600;">
-        Your password reset code is: <span style="color:#D4AF37;">${data.code}</span>. This code expires in 10 minutes.
+        Your password reset code is: <span style="color:#f62c7f;">${data.code}</span>. This code expires in 10 minutes.
       </p>
     </div>
 
@@ -477,7 +477,7 @@ export async function sendPaymentFailed(data: PaymentFailedData): Promise<EmailR
       could not be processed. This can happen if your card was declined or the payment timed out.
     </p>
 
-    <div style="background-color:#fff8f0; border-left:4px solid #D4AF37; padding:16px; border-radius:0 6px 6px 0; margin:16px 0;">
+    <div style="background-color:#fff8f0; border-left:4px solid #f62c7f; padding:16px; border-radius:0 6px 6px 0; margin:16px 0;">
       <p style="margin:0; color:#333; font-size:14px;">
         <strong>What to do:</strong> Please try checking out again. Your cart has been preserved.
         If the problem persists, contact us at +977 9856010315 or reply to this email.
@@ -553,7 +553,7 @@ export async function sendOrderStatusUpdate(data: OrderStatusUpdateData): Promis
       title: 'Your Order Has Been Shipped!',
       subtitle: `Great news! Your order <strong>${data.orderNumber}</strong> is on its way to you.`,
       icon: '📦',
-      color: '#D4AF37',
+      color: '#f62c7f',
     },
     delivered: {
       title: 'Your Order Has Been Delivered!',
@@ -654,7 +654,7 @@ export async function sendContactNotification(data: ContactNotificationData): Pr
         <tr>
           <td style="padding:6px 0; color:#999; font-size:12px; text-transform:uppercase;">Email</td>
           <td style="padding:6px 0; text-align:right; font-size:14px;">
-            <a href="mailto:${data.email}" style="color:#D4AF37; text-decoration:none;">${data.email}</a>
+            <a href="mailto:${data.email}" style="color:#f62c7f; text-decoration:none;">${data.email}</a>
           </td>
         </tr>
         <tr>
@@ -664,13 +664,13 @@ export async function sendContactNotification(data: ContactNotificationData): Pr
       </table>
     </div>
 
-    <div style="border-left:4px solid #D4AF37; padding:16px; background-color:#fffdf5; border-radius:0 6px 6px 0; margin-bottom:16px;">
+    <div style="border-left:4px solid #f62c7f; padding:16px; background-color:#fffdf5; border-radius:0 6px 6px 0; margin-bottom:16px;">
       <p style="margin:0 0 4px; color:#999; font-size:12px; text-transform:uppercase;">Message</p>
       <p style="margin:0; color:#333; font-size:14px; white-space:pre-line; line-height:1.6;">${data.message}</p>
     </div>
 
     <p style="margin:0; color:#999; font-size:13px;">
-      Reply directly to <a href="mailto:${data.email}" style="color:#D4AF37;">${data.email}</a> to respond.
+      Reply directly to <a href="mailto:${data.email}" style="color:#f62c7f;">${data.email}</a> to respond.
     </p>
   `
 
@@ -774,15 +774,15 @@ export async function sendAdvanceBookingConfirmation(
           <td style="padding:6px 0; text-align:right; font-family:monospace; font-size:12px; color:#888;">${data.transactionUuid}</td>
         </tr>
         <tr style="border-top:1px solid #ddd;">
-          <td style="padding:12px 0 0; color:#D4AF37; font-weight:700; font-size:16px;">Advance Deposit Paid:</td>
-          <td style="padding:12px 0 0; text-align:right; font-weight:700; font-size:18px; color:#D4AF37;">
+          <td style="padding:12px 0 0; color:#f62c7f; font-weight:700; font-size:16px;">Advance Deposit Paid:</td>
+          <td style="padding:12px 0 0; text-align:right; font-weight:700; font-size:18px; color:#f62c7f;">
             NPR ${Number(data.advanceAmount).toLocaleString()}
           </td>
         </tr>
       </table>
     </div>
 
-    <div style="border-left:4px solid #D4AF37; padding:14px 18px; background-color:#fffdf5; border-radius:0 8px 8px 0; margin-bottom:20px;">
+    <div style="border-left:4px solid #f62c7f; padding:14px 18px; background-color:#fffdf5; border-radius:0 8px 8px 0; margin-bottom:20px;">
       <p style="margin:0; color:#333; font-size:14px; line-height:1.6;">
         <strong>Next Steps:</strong> Our photography crew has secured your calendar slot. We will contact you at <strong>${data.phone}</strong> or on WhatsApp to coordinate setup, timeline, and location details.
       </p>
@@ -843,13 +843,13 @@ export async function sendAdminAdvanceBookingNotification(
         <tr>
           <td style="padding:5px 0; color:#888;">Phone:</td>
           <td style="padding:5px 0; text-align:right; font-weight:600;">
-            <a href="tel:${data.customerPhone}" style="color:#D4AF37;">${data.customerPhone}</a>
+            <a href="tel:${data.customerPhone}" style="color:#f62c7f;">${data.customerPhone}</a>
           </td>
         </tr>
         <tr>
           <td style="padding:5px 0; color:#888;">Email:</td>
           <td style="padding:5px 0; text-align:right;">
-            <a href="mailto:${data.customerEmail}" style="color:#D4AF37;">${data.customerEmail}</a>
+            <a href="mailto:${data.customerEmail}" style="color:#f62c7f;">${data.customerEmail}</a>
           </td>
         </tr>
         <tr>
@@ -869,8 +869,8 @@ export async function sendAdminAdvanceBookingNotification(
           <td style="padding:5px 0; text-align:right; font-family:monospace; font-size:12px;">${data.transactionUuid}</td>
         </tr>
         <tr style="border-top:1px solid #e0e0e0;">
-          <td style="padding:10px 0 0; color:#D4AF37; font-weight:700; font-size:16px;">Advance Deposit:</td>
-          <td style="padding:10px 0 0; text-align:right; font-weight:700; font-size:18px; color:#D4AF37;">
+          <td style="padding:10px 0 0; color:#f62c7f; font-weight:700; font-size:16px;">Advance Deposit:</td>
+          <td style="padding:10px 0 0; text-align:right; font-weight:700; font-size:18px; color:#f62c7f;">
             NPR ${Number(data.advanceAmount).toLocaleString()}
           </td>
         </tr>

@@ -27,7 +27,21 @@ export function Footer() {
   }, [])
 
   const handleNavClick = (e: React.MouseEvent, href: string) => {
-    if (href.startsWith('/') && !href.includes('#')) {
+    const isHome = href === '/' || href === '#home' || href === '/#home'
+
+    if (isHome) {
+      if (pathname === '/') {
+        e.preventDefault()
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        history.replaceState(null, '', '/')
+      } else {
+        e.preventDefault()
+        router.push('/')
+      }
+      return
+    }
+
+    if (href.startsWith('/') && !href.startsWith('/#')) {
       return
     }
 
@@ -36,7 +50,8 @@ export function Footer() {
     if (pathname === '/') {
       const el = document.querySelector(targetHash)
       if (el) {
-        const top = el.getBoundingClientRect().top + window.scrollY - 70
+        const currentY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
+        const top = Math.max(0, el.getBoundingClientRect().top + currentY - 70)
         window.scrollTo({ top, behavior: 'smooth' })
         history.replaceState(null, '', targetHash)
       }
@@ -60,13 +75,13 @@ export function Footer() {
               }}
               className="flex items-center gap-3 mb-4 group"
             >
-              <div className="relative h-10 w-10 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div className="relative h-10 w-14 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Image
-                  src="/logo.svg"
+                  src="/logo.png"
                   alt="Wedding Moment Logo"
-                  width={40}
-                  height={40}
-                  className="h-9 w-9 object-contain drop-shadow-sm"
+                  width={56}
+                  height={41}
+                  className="h-10 w-auto object-contain drop-shadow-sm"
                 />
               </div>
               <span className="font-serif text-xl font-bold text-foreground">
@@ -107,16 +122,24 @@ export function Footer() {
               <span className="absolute -bottom-2 left-0 h-0.5 w-10 bg-gold" />
             </h3>
             <ul className="space-y-3 mt-4">
-              {servicesList.map((s) => (
-                <li key={s.key}>
-                  <Link
-                    href={`/services#${s.key}`}
-                    className="text-sm text-muted-foreground hover:text-gold transition-colors"
-                  >
-                    {s.title}
-                  </Link>
-                </li>
-              ))}
+              {servicesList.map((s) => {
+                const href =
+                  s.key === 'portrait'
+                    ? '/services/indoor-photography'
+                    : s.key === 'wedding'
+                    ? '/services/wedding-photography'
+                    : `/services#${s.key}`
+                return (
+                  <li key={s.key}>
+                    <Link
+                      href={href}
+                      className="text-sm text-muted-foreground hover:text-gold transition-colors"
+                    >
+                      {s.title}
+                    </Link>
+                  </li>
+                )
+              })}
             </ul>
           </div>
 

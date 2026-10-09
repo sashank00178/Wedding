@@ -80,13 +80,13 @@ export function Contact() {
             <div>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="relative h-10 w-10 shrink-0 flex items-center justify-center">
+                  <div className="relative h-10 w-14 shrink-0 flex items-center justify-center">
                     <Image
-                      src="/logo.svg"
+                      src="/logo.png"
                       alt="Wedding Moment Logo"
-                      width={40}
-                      height={40}
-                      className="h-9 w-9 object-contain drop-shadow-sm"
+                      width={56}
+                      height={41}
+                      className="h-10 w-auto object-contain drop-shadow-sm"
                     />
                   </div>
                   <div>

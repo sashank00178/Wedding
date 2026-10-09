@@ -32,9 +32,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Wedding Moment Nepal" }],
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/logo.svg",
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/logo.png",
   },
   openGraph: {
     title: "Wedding Moment Nepal | Professional Photography",

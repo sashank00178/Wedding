@@ -427,17 +427,6 @@ export default function AdminDashboardPage() {
     }
   }, [status, loadAllData])
 
-  if (status === 'loading' || status === 'unauthenticated') {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-gold" />
-        <p className="text-sm font-medium text-muted-foreground animate-pulse">
-          Verifying Admin Credentials...
-        </p>
-      </div>
-    )
-  }
-
   // ----------------------------------------------------
   // Quick In-Place Login Handler
   // ----------------------------------------------------
@@ -485,7 +474,7 @@ export default function AdminDashboardPage() {
               label: 'Clear Draft',
               onClick: () => {
                 localStorage.removeItem(DRAFT_STORAGE_KEY)
-                setPhotoForm({ title: '', category: 'wedding', subcategory: '', src: '' })
+                setPhotoForm({ title: '', category: 'wedding', subcategory: '', description: '', src: '' })
               },
             },
           })
@@ -499,6 +488,7 @@ export default function AdminDashboardPage() {
       title: '',
       category: 'wedding',
       subcategory: '',
+      description: '',
       src: '',
     })
     setGalleryModalOpen(true)
@@ -510,6 +500,7 @@ export default function AdminDashboardPage() {
       title: photo.title,
       category: photo.category,
       subcategory: photo.subcategory || '',
+      description: photo.description || '',
       src: photo.src,
     })
     setGalleryModalOpen(true)
@@ -968,6 +959,17 @@ export default function AdminDashboardPage() {
     .filter((p) => p.status === 'paid')
     .reduce((acc, curr) => acc + (curr.amount || 0), 0)
 
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-gold" />
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">
+          Verifying Admin Credentials...
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row">
       {/* ----------------- SIDEBAR (DESKTOP) ----------------- */}
@@ -975,13 +977,13 @@ export default function AdminDashboardPage() {
         <div>
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 mb-8 group">
-            <div className="relative h-10 w-10 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="relative h-10 w-14 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
               <Image
-                src="/logo.svg"
+                src="/logo.png"
                 alt="Wedding Moment Logo"
-                width={40}
-                height={40}
-                className="h-9 w-9 object-contain drop-shadow-sm"
+                width={56}
+                height={41}
+                className="h-10 w-auto object-contain drop-shadow-sm"
               />
             </div>
             <div className="flex flex-col">
@@ -1183,13 +1185,13 @@ export default function AdminDashboardPage() {
       {/* ----------------- MOBILE HEADER ----------------- */}
       <div className="lg:hidden bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-40">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="relative h-8 w-8 rounded-full shrink-0 flex items-center justify-center">
+          <div className="relative h-8 w-11 shrink-0 flex items-center justify-center">
             <Image
-              src="/logo.svg"
+              src="/logo.png"
               alt="Wedding Moment Logo"
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain"
+              width={44}
+              height={32}
+              className="h-8 w-auto object-contain"
             />
           </div>
           <span className="font-serif text-base font-bold">
@@ -3079,7 +3081,7 @@ export default function AdminDashboardPage() {
                     try {
                       localStorage.removeItem(DRAFT_STORAGE_KEY)
                     } catch {}
-                    setPhotoForm({ title: '', category: 'wedding', subcategory: '', src: '' })
+                    setPhotoForm({ title: '', category: 'wedding', subcategory: '', description: '', src: '' })
                     toast.info('Draft cleared')
                   }}
                   className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"

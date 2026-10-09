@@ -1,7 +1,6 @@
 import RawNepaliDate from 'nepali-date-converter'
 
 // Handle ES module, CommonJS, and Next.js bundler default export variations cleanly
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const NepaliDate: any = (RawNepaliDate as any)?.default || RawNepaliDate
 
 export interface BsDateObject {
@@ -103,7 +102,6 @@ export function parseAdDate(input: Date | string | null | undefined): Date | nul
 /**
  * Convert an AD Date or date string to NepaliDate instance.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function adToBs(input: Date | string | null | undefined): any | null {
   const adDate = parseAdDate(input)
   if (!adDate) return null

@@ -51,7 +51,9 @@ const config: Config = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
+  			gold: 'var(--gold)',
+  			'gold-soft': 'var(--gold-soft)'
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

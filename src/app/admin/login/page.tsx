@@ -222,13 +222,13 @@ function AdminLoginForm() {
         {/* Brand Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 mb-3 group">
-            <div className="relative h-12 w-12 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="relative h-12 w-16 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform">
               <Image
-                src="/logo.svg"
+                src="/logo.png"
                 alt="Wedding Moment Logo"
-                width={48}
-                height={48}
-                className="h-11 w-11 object-contain drop-shadow-sm"
+                width={64}
+                height={47}
+                className="h-12 w-auto object-contain drop-shadow-sm"
               />
             </div>
             <span className="font-serif text-2xl font-bold tracking-tight text-foreground">

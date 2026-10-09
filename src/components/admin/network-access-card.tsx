@@ -171,7 +171,6 @@ export function NetworkAccessCard({ className }: { className?: string }) {
       {showQr && (
         <div className="bg-secondary/30 border border-border rounded-xl p-4 mb-4 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left animate-in fade-in-0 duration-150">
           <div className="bg-white p-2 rounded-lg shadow-sm shrink-0 border border-border">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={qrCodeUrl}
               alt="Scan QR code to access website on phone"

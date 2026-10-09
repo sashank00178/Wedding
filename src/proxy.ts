@@ -1,1 +1,7 @@
-export { proxy, proxyConfig } from '@/middleware/edgeProxy'
+export { proxy } from '@/middleware/edgeProxy'
+
+export const config = {
+  matcher: [
+    '/api/:path*',
+  ],
+}

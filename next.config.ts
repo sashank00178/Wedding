@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import os from "os";
+import path from "path";
 
 // Dynamically discover all active local IPv4 addresses so any Wi-Fi IP and tunnels are allowed
 function getDevAllowedOrigins(): string[] {
@@ -29,7 +30,7 @@ function getDevAllowedOrigins(): string[] {
         }
       }
     }
-  } catch {}
+  } catch { }
 
   return Array.from(new Set(origins));
 }
@@ -37,10 +38,14 @@ function getDevAllowedOrigins(): string[] {
 const devOrigins = getDevAllowedOrigins();
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   // Allow Turbopack dev server and HMR WebSockets from local network IPs and tunnels
   allowedDevOrigins: devOrigins,
 
   output: "standalone",
+  transpilePackages: ["next-auth"],
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -149,6 +154,83 @@ const nextConfig: NextConfig = {
         destination: '/admin/dashboard',
         permanent: false,
       },
+      // Service aliases & plural/singular redirects
+      {
+        source: '/service',
+        destination: '/services',
+        permanent: false,
+      },
+      {
+        source: '/services/wedding',
+        destination: '/services/wedding-photography',
+        permanent: false,
+      },
+      {
+        source: '/services/weddings',
+        destination: '/services/wedding-photography',
+        permanent: false,
+      },
+      {
+        source: '/services/indoor',
+        destination: '/services/indoor-photography',
+        permanent: false,
+      },
+      {
+        source: '/services/portrait',
+        destination: '/services/indoor-photography',
+        permanent: false,
+      },
+      {
+        source: '/services/portraits',
+        destination: '/services/indoor-photography',
+        permanent: false,
+      },
+      {
+        source: '/service/wedding-photography',
+        destination: '/services/wedding-photography',
+        permanent: false,
+      },
+      {
+        source: '/service/indoor-photography',
+        destination: '/services/indoor-photography',
+        permanent: false,
+      },
+      {
+        source: '/service/wedding',
+        destination: '/services/wedding-photography',
+        permanent: false,
+      },
+      {
+        source: '/service/indoor',
+        destination: '/services/indoor-photography',
+        permanent: false,
+      },
+      // Admin dashboard tab aliases
+      {
+        source: '/admin/services',
+        destination: '/admin/dashboard?tab=services',
+        permanent: false,
+      },
+      {
+        source: '/admin/gallery',
+        destination: '/admin/dashboard?tab=gallery',
+        permanent: false,
+      },
+      {
+        source: '/admin/bookings',
+        destination: '/admin/dashboard?tab=bookings',
+        permanent: false,
+      },
+      {
+        source: '/admin/messages',
+        destination: '/admin/dashboard?tab=messages',
+        permanent: false,
+      },
+      {
+        source: '/admin/payments',
+        destination: '/admin/dashboard?tab=payments',
+        permanent: false,
+      },
     ]
   },
 
@@ -156,8 +238,16 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: '/gallery/:path*',
-        destination: '/assets/images/gallery/:path*',
+        source: '/gallery/indoor/:path*',
+        destination: '/assets/images/gallery/indoor/:path*',
+      },
+      {
+        source: '/gallery/weddings/:path*',
+        destination: '/assets/images/gallery/weddings/:path*',
+      },
+      {
+        source: '/gallery/hero/:path*',
+        destination: '/assets/images/hero/:path*',
       },
       {
         source: '/hero.jpeg',

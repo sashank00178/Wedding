@@ -29,6 +29,8 @@ export function Hero({ initialImages }: HeroProps) {
   const [currentIndex, setCurrentIndex] = React.useState(0)
   const [prevIndex, setPrevIndex] = React.useState<number | null>(null)
   const [isAnimating, setIsAnimating] = React.useState(false)
+  const [isInView, setIsInView] = React.useState(true)
+  const sectionRef = React.useRef<HTMLElement | null>(null)
 
   // Fetch site data and dynamic hero images if needed
   React.useEffect(() => {
@@ -43,6 +45,39 @@ export function Hero({ initialImages }: HeroProps) {
         }
       })
       .catch(() => {})
+  }, [])
+
+  // Track if Hero is in viewport & tab is visible to pause background slider and eliminate lag
+  React.useEffect(() => {
+    const el = sectionRef.current
+    if (!el || typeof window === 'undefined') return
+
+    let observer: IntersectionObserver | null = null
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          setIsInView(entry.isIntersecting)
+        },
+        { threshold: 0.1 }
+      )
+      observer.observe(el)
+    }
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        setIsInView(false)
+      } else if (el) {
+        const rect = el.getBoundingClientRect()
+        setIsInView(rect.bottom > 0 && rect.top < window.innerHeight)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      if (observer) observer.disconnect()
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [])
 
   // Auto-sliding function (smooth right to left)
@@ -65,30 +100,16 @@ export function Hero({ initialImages }: HeroProps) {
     return () => clearTimeout(timer)
   }, [isAnimating])
 
-  // Preload upcoming images in browser background cache to prevent any flash/blank
+  // Automatic timer: triggers every 4.5 seconds only when visible in viewport and tab active
   React.useEffect(() => {
-    if (images.length === 0 || typeof window === 'undefined') return
-    const nextIdx1 = (currentIndex + 1) % images.length
-    const nextIdx2 = (currentIndex + 2) % images.length
-    ;[nextIdx1, nextIdx2].forEach((idx) => {
-      const img = images[idx]
-      if (img?.src) {
-        const pImg = new window.Image()
-        pImg.src = img.src
-      }
-    })
-  }, [currentIndex, images])
-
-  // Automatic timer: triggers and loops automatically every 2 seconds (2000ms)
-  React.useEffect(() => {
-    if (images.length <= 1) return
+    if (images.length <= 1 || !isInView) return
 
     const timer = setInterval(() => {
       goToNext()
-    }, 2000)
+    }, 4500)
 
     return () => clearInterval(timer)
-  }, [images.length, goToNext])
+  }, [images.length, goToNext, isInView])
 
   // Smooth scroll handler
   const handleScroll = (href: string) => (e: React.MouseEvent) => {
@@ -102,6 +123,7 @@ export function Hero({ initialImages }: HeroProps) {
 
   return (
     <section
+      ref={sectionRef}
       id="home"
       className="relative min-h-screen flex items-center justify-center overflow-hidden select-none"
       role="region"
@@ -140,20 +162,22 @@ export function Hero({ initialImages }: HeroProps) {
           return (
             <div
               key={`${item.src}-${idx}`}
-              className="absolute inset-0 will-change-transform"
+              className="absolute inset-0"
               style={{
                 transform,
                 opacity,
                 zIndex,
                 transition,
                 visibility: isActive || isPrevious ? 'visible' : 'hidden',
+                willChange: isAnimating && (isActive || isPrevious) ? 'transform, opacity' : 'auto',
               }}
             >
               <Image
                 src={item.src}
                 alt={item.alt || 'Wedding Moment Nepal showcase'}
                 fill
-                priority={idx === 0 || idx === 1}
+                priority={idx === 0}
+                loading={idx <= 1 ? 'eager' : 'lazy'}
                 sizes="100vw"
                 quality={75}
                 className="object-cover"

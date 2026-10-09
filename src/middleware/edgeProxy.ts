@@ -220,8 +220,10 @@ export async function proxy(request: NextRequest) {
 
 // ── Matcher Config ──────────────────────────────────────────────────
 // Run on all API routes for CORS + security, but only enforce auth on protected ones
-export const proxyConfig = {
+export const config = {
   matcher: [
     '/api/:path*',
   ],
 }
+
+export const proxyConfig = config
